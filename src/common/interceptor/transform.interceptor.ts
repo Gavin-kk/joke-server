@@ -15,7 +15,7 @@ export class TransformInterceptor implements NestInterceptor {
       map((data) => ({
         data: classToPlain(data),
         message: 'ok',
-        code: 200,
+        statusCode: 200,
       })),
     );
   }
