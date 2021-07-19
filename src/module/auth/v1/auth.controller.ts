@@ -1,17 +1,29 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Logger } from '@nestjs/common';
 import { AuthService, IAuthServiceOtherLoginError } from './auth.service';
 import { EmailLoginDto } from './dto/email-login.dto';
-import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
 import { Users } from '../../entitys/Users';
 import { PasswordLogin } from './dto/passwrod-login.dto';
 import { OtherLoginDto } from './dto/other-login.dto';
+import { CheckTokenGuard } from '../../../common/guard/check-token.guard';
+import { RedisServiceN } from '../../../lib/redis/redis.service';
+import {
+  tokenExpired,
+  tokenRedisKey,
+} from '../../../common/constant/auth.constant';
+import { NewHttpException } from '../../../common/exception/customize.exception';
 
 @ApiTags('授权模块')
 @Controller('api/v1/auth/login')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  private logger: Logger = new Logger('AuthController');
+
+  constructor(
+    private readonly authService: AuthService,
+    private readonly redisService: RedisServiceN,
+  ) {}
 
   // 账号密码登录
   @ApiOperation({
@@ -26,7 +38,19 @@ export class AuthController {
   public async passwordLogin(@CurrentUser() user: Users) {
     // 验证用户是否黑名单
     await this.authService.checkIfTheUserIsBlacklisted(user);
+    // 生成token
     const token = this.authService.generateToken(user.id, user.password);
+    try {
+      // 把 token 写入缓存
+      await this.redisService.set(
+        tokenRedisKey(user.email),
+        token,
+        tokenExpired,
+      );
+    } catch (err) {
+      this.logger.log(err, '账号密码登录token写入缓存失败');
+      throw new NewHttpException('登录失败', 400);
+    }
     return {
       user,
       token,
@@ -48,6 +72,18 @@ export class AuthController {
       user.password,
     );
     delete user.password;
+
+    try {
+      // 把 token 写入缓存
+      await this.redisService.set(
+        tokenRedisKey(user.email),
+        token,
+        tokenExpired,
+      );
+    } catch (err) {
+      this.logger.log(err, 'email登录token写入缓存失败');
+      throw new NewHttpException('登录失败', 400);
+    }
     return {
       user,
       token,
@@ -74,18 +110,43 @@ export class AuthController {
       (result as Users).id,
       (result as Users).password,
     );
+
+    try {
+      // 把 token 写入缓存
+      await this.redisService.set(
+        tokenRedisKey((result as Users).email),
+        token,
+        tokenExpired,
+      );
+    } catch (err) {
+      this.logger.log(err, '第三方登录token写入缓存失败');
+      throw new NewHttpException('登录失败', 400);
+    }
+
     return {
       user: result,
       token,
     };
   }
 
-  // @Get('test')
-  // @ApiBearerAuth()
-  // @UseGuards(CheckUserIsBlacklisted)
-  // @UseGuards(AuthGuard('jwt'))
-  // @ApiOperation({ summary: '测试jwt' })
-  // async testjwt(@CurrentUser() user) {
-  //   return user;
-  // }
+  @Get('test')
+  @ApiOperation({ summary: '测试jwt' })
+  async testjwt(@CurrentUser() user) {
+    this.logger.error('redis删除token出错');
+    return user;
+  }
+
+  @ApiOperation({ summary: '退出登录' })
+  @Post('exit')
+  @UseGuards(CheckTokenGuard)
+  @UseGuards(AuthGuard('jwt'))
+  async exit(@CurrentUser() user: Users) {
+    try {
+      await this.redisService.del(tokenRedisKey(user.email));
+    } catch (err) {
+      this.logger.error(err, 'redis删除token出错');
+      throw new NewHttpException('退出失败', 400);
+    }
+    return 'ok';
+  }
 }

@@ -5,13 +5,13 @@ import { Users } from '../../entitys/Users';
 import { Repository } from 'typeorm';
 import { NewHttpException } from '../../../common/exception/customize.exception';
 import { UserBind } from '../../entitys/UserBind';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     @InjectRepository(Users)
     private readonly usersRepository: Repository<Users>,
-    @InjectRepository(UserBind)
-    private readonly userBindRepository: Repository<UserBind>,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -36,7 +36,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     } else {
       throw new NewHttpException('无效授权', 401);
     }
-
     return user;
   }
 }

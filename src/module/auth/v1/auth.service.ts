@@ -4,12 +4,13 @@ import { NewHttpException } from '../../../common/exception/customize.exception'
 import { EmailLoginDto } from './dto/email-login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from '../../entitys/Users';
-import { InsertResult, Repository } from 'typeorm';
+import { Connection, InsertResult, Repository } from 'typeorm';
 import { length } from 'class-validator';
-import { authExpiredConfig } from '../../../config/auth-expired.config';
+import { tokenExpired } from '../../../common/constant/auth.constant';
 import { JwtService } from '@nestjs/jwt';
 import { OtherLoginDto } from './dto/other-login.dto';
 import { UserBind } from '../../entitys/UserBind';
+import { CurrentToken } from '../../../common/decorator/current-token.decorator';
 
 export interface IAuthServiceOtherLoginError {
   text: string;
@@ -27,6 +28,8 @@ export class AuthService {
     private readonly userBindRepository: Repository<UserBind>,
     private readonly redisService: RedisServiceN,
     private readonly jwtService: JwtService,
+    //  数据库事务
+    private readonly connection: Connection,
   ) {}
 
   // 验证邮箱登录
@@ -79,7 +82,12 @@ export class AuthService {
   }
 
   // 第三方登录
-  public async otherLogin({ openid, type, avatar, nickname }: OtherLoginDto) {
+  public async otherLogin({
+    openid,
+    type,
+    avatar,
+    nickname,
+  }: OtherLoginDto): Promise<IAuthServiceOtherLoginError | Users> {
     // 先验证是否存在该第三方登录的数据
     const isExists: UserBind | undefined =
       await this.userBindRepository.findOne({
@@ -95,11 +103,10 @@ export class AuthService {
         .values({ type, openid, avatar, nickname })
         .execute();
 
-      const error: IAuthServiceOtherLoginError = {
+      return {
         text: '请绑定邮箱',
         userBindId: result.generatedMaps[0].id,
-      };
-      return error;
+      } as IAuthServiceOtherLoginError;
     }
     // 防止跳过首次登录绑定邮箱
     if (isExists && !isExists.userId) {
@@ -116,13 +123,26 @@ export class AuthService {
 
   // 生成token
   public generateToken(id: number, password: string): string {
-    return this.jwtService.sign(
-      { id, password },
-      { expiresIn: authExpiredConfig },
-    );
+    return this.jwtService.sign({ id, password }, { expiresIn: tokenExpired });
   }
+
   //检查用户是否黑名单
-  public async checkIfTheUserIsBlacklisted(user: Users) {
+  public async checkIfTheUserIsBlacklisted(user: Users): Promise<void> {
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect(); // 连接查询运行器
+    await queryRunner.startTransaction(); // 开始事务
+    try {
+      //  在这里执行事务
+      await queryRunner.manager.createQueryBuilder().insert();
+      //  在这里提交事务
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      //  在这里回滚事务
+      await queryRunner.rollbackTransaction();
+    } finally {
+      // 释放数据库连接
+      await queryRunner.release();
+    }
     if (user.status === 1) {
       throw new NewHttpException('用户违反用户协定, 已被封禁', 401);
     }
