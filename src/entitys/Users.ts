@@ -4,12 +4,15 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Userinfo } from './Userinfo';
 import { UserBind } from './UserBind';
+import { Userinfo } from './Userinfo';
 
-@Index('user_bind_id-user_id', ['userBindId'], {})
+@Index('IDX_fe0bb3f6520ee0469504521e71', ['username'], { unique: true })
+@Index('IDX_97672ac88f789774dd47f7c8be', ['email'], { unique: true })
+@Index('IDX_a000cca60bcf04454e72769949', ['phone'], { unique: true })
 @Index('userinfo_id-user_id', ['userinfoId'], {})
 @Entity('users', { schema: 'joke' })
 export class Users {
@@ -19,13 +22,11 @@ export class Users {
   @Column('varchar', {
     name: 'username',
     nullable: true,
+    unique: true,
     comment: '用户名',
     length: 30,
   })
   username: string | null;
-
-  @Column('varchar', { name: 'password', comment: '密码', length: 50 })
-  password: string;
 
   @Column('text', { name: 'avatar', nullable: true, comment: '头像' })
   avatar: string | null;
@@ -33,6 +34,7 @@ export class Users {
   @Column('varchar', {
     name: 'email',
     nullable: true,
+    unique: true,
     comment: '邮箱',
     length: 100,
   })
@@ -59,6 +61,7 @@ export class Users {
   @Column('char', {
     name: 'phone',
     nullable: true,
+    unique: true,
     comment: '手机号',
     length: 11,
   })
@@ -79,12 +82,11 @@ export class Users {
   })
   userinfoId: number | null;
 
-  @Column('int', {
-    name: 'user_bind_id',
-    nullable: true,
-    comment: '用户绑定的第三方账号',
-  })
-  userBindId: number | null;
+  @Column('varchar', { name: 'password', comment: '密码', length: 300 })
+  password: string;
+
+  @OneToMany(() => UserBind, (userBind) => userBind.user)
+  userBinds: UserBind[];
 
   @ManyToOne(() => Userinfo, (userinfo) => userinfo.users, {
     onDelete: 'NO ACTION',
@@ -92,11 +94,4 @@ export class Users {
   })
   @JoinColumn([{ name: 'userinfo_id', referencedColumnName: 'id' }])
   userinfo: Userinfo;
-
-  @ManyToOne(() => UserBind, (userBind) => userBind.users, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
-  })
-  @JoinColumn([{ name: 'user_bind_id', referencedColumnName: 'id' }])
-  userBind: UserBind;
 }

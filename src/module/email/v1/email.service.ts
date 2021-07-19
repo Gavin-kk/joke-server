@@ -17,7 +17,7 @@ export class EmailService {
     private readonly redisService: RedisServiceN,
   ) {}
 
-  async sendEmailCode(email: string) {
+  public async sendEmailCode(email: string) {
     // 判断是否已经发送
     const isExists = await this.redisService.get(email);
     if (isExists) {
@@ -41,7 +41,7 @@ export class EmailService {
       // 发送验证码
       await this.mailerService.sendMail(sendMailOptions);
       this.logger.log(`${email}验证码发送成功`);
-      const result = await this.redisService.set(email, code, 100000);
+      const result = await this.redisService.set(email, code, 300);
       if (result === 'OK') {
         this.logger.log(`${email}:${code}存入缓存成功`);
       }

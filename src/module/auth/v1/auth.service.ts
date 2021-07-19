@@ -6,6 +6,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from '../../entitys/Users';
 import { InsertResult, Repository } from 'typeorm';
 import { length } from 'class-validator';
+import { authExpiredConfig } from '../../../config/auth-expired.config';
+import { JwtService } from '@nestjs/jwt';
+import { OtherLoginDto } from './dto/other-login.dto';
+import { UserBind } from '../../entitys/UserBind';
+
+export interface IAuthServiceOtherLoginError {
+  text: string;
+  userBindId: number;
+}
 
 @Injectable()
 export class AuthService {
@@ -14,11 +23,14 @@ export class AuthService {
   constructor(
     @InjectRepository(Users)
     private readonly userRepository: Repository<Users>,
+    @InjectRepository(UserBind)
+    private readonly userBindRepository: Repository<UserBind>,
     private readonly redisService: RedisServiceN,
+    private readonly jwtService: JwtService,
   ) {}
 
-  // 发送手机验证码
-  async verifyLogin(emailLoginDto: EmailLoginDto): Promise<Users> {
+  // 验证邮箱登录
+  public async verifyLogin(emailLoginDto: EmailLoginDto): Promise<Users> {
     const result: number | null = await this.redisService.get(
       emailLoginDto.email,
     );
@@ -52,7 +64,7 @@ export class AuthService {
             password: emailLoginDto.password,
           })
           .execute();
-        // 查询用户
+        // 返回 查询用户
         return this.userRepository.findOne({
           email: emailLoginDto.email,
         });
@@ -61,7 +73,58 @@ export class AuthService {
         throw new NewHttpException('注册用户失败', 400);
       }
     } else {
-      throw new NewHttpException('用户不存在', 404);
+      // 如果用户是第一次使用该邮箱登录 返回用户不存在 让前端跳转到绑定初始密码页面 然后再次请求本接口即可获取token
+      throw new NewHttpException('请绑定初始密码', 404);
+    }
+  }
+
+  // 第三方登录
+  public async otherLogin({ openid, type, avatar, nickname }: OtherLoginDto) {
+    // 先验证是否存在该第三方登录的数据
+    const isExists: UserBind | undefined =
+      await this.userBindRepository.findOne({
+        openid,
+        type,
+      });
+    // 如果不存在 则在表中记录该用户第三方登录数据 然后抛出异常让前端处理跳转到绑定邮箱页面
+    if (!isExists) {
+      const result: InsertResult = await this.userBindRepository
+        .createQueryBuilder()
+        .insert()
+        .into(UserBind)
+        .values({ type, openid, avatar, nickname })
+        .execute();
+
+      const error: IAuthServiceOtherLoginError = {
+        text: '请绑定邮箱',
+        userBindId: result.generatedMaps[0].id,
+      };
+      return error;
+    }
+    // 防止跳过首次登录绑定邮箱
+    if (isExists && !isExists.userId) {
+      return {
+        text: '请绑定邮箱',
+        userBindId: isExists.id,
+      } as IAuthServiceOtherLoginError;
+    }
+
+    return await this.userRepository.findOne({
+      id: isExists.userId,
+    });
+  }
+
+  // 生成token
+  public generateToken(id: number, password: string): string {
+    return this.jwtService.sign(
+      { id, password },
+      { expiresIn: authExpiredConfig },
+    );
+  }
+  //检查用户是否黑名单
+  public async checkIfTheUserIsBlacklisted(user: Users) {
+    if (user.status === 1) {
+      throw new NewHttpException('用户违反用户协定, 已被封禁', 401);
     }
   }
 }

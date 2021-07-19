@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptor/transform.interceptor';
 import * as dotenv from 'dotenv-flow';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { Log4jsLogger } from '@nestx-log4js/core';
 
 dotenv.config();
 
@@ -12,8 +13,7 @@ const logger = new Logger('main.ts');
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  // app.setBaseViewsDir('./module/email/v1/template');
-  // app.setViewEngine('ejs');
+
   const config = new DocumentBuilder()
     .setTitle('嘻嘻哈哈移动端api接口文档')
     // .setDescription('这是商城后台管理系统项目')
@@ -25,6 +25,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   // 第一个参数是路径 就是你要在那个url路径访问到这个 api 文档
   SwaggerModule.setup('api-docs', app, document);
+  //启用日志框架
+  app.useLogger(app.get(Log4jsLogger));
   // 使用全局管道 验证
   app.useGlobalPipes(new ValidationPipe());
   // 使用全局拦截器

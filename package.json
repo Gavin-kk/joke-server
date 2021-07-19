@@ -30,6 +30,7 @@
     "@nestjs/platform-express": "^7.6.15",
     "@nestjs/swagger": "^4.8.0",
     "@nestjs/typeorm": "^7.1.5",
+    "@nestx-log4js/core": "^1.5.0",
     "@types/bcryptjs": "^2.4.2",
     "@types/moment": "^2.13.0",
     "@types/mysql": "^2.15.19",

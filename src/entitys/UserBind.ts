@@ -1,6 +1,14 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import { Users } from "./Users";
 
+@Index("bind-users_id", ["userId"], {})
 @Entity("user_bind", { schema: "joke" })
 export class UserBind {
   @PrimaryGeneratedColumn({ type: "int", name: "id" })
@@ -41,6 +49,17 @@ export class UserBind {
   })
   updateAt: Date | null;
 
-  @OneToMany(() => Users, (users) => users.userBind)
-  users: Users[];
+  @Column("int", {
+    name: "user_id",
+    nullable: true,
+    comment: "第三方账号绑定的用户",
+  })
+  userId: number | null;
+
+  @ManyToOne(() => Users, (users) => users.userBinds, {
+    onDelete: "NO ACTION",
+    onUpdate: "NO ACTION",
+  })
+  @JoinColumn([{ name: "user_id", referencedColumnName: "id" }])
+  user: Users;
 }

@@ -4,11 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from '../../entitys/Users';
 import { Repository } from 'typeorm';
 import { NewHttpException } from '../../../common/exception/customize.exception';
+import { UserBind } from '../../entitys/UserBind';
 
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     @InjectRepository(Users)
-    private readonly users: Repository<Users>,
+    private readonly usersRepository: Repository<Users>,
+    @InjectRepository(UserBind)
+    private readonly userBindRepository: Repository<UserBind>,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -16,17 +19,24 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     } as StrategyOptions);
   }
 
-  async validate({
+  private async validate({
     id,
     password,
   }: {
     id: number;
     password: string;
-  }): Promise<Users> {
-    const user: Users = await this.users.findOne({ id });
-    if (!user || password !== user.password) {
+  }): Promise<Users | UserBind> {
+    let user: Users | UserBind;
+    const userExists: Users | undefined = await this.usersRepository.findOne({
+      id,
+      password,
+    });
+    if (userExists && password === userExists.password) {
+      user = userExists;
+    } else {
       throw new NewHttpException('无效授权', 401);
     }
+
     return user;
   }
 }
