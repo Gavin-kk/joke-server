@@ -6,11 +6,11 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Users } from './Users';
+import { UsersEntity } from './users.entity';
 
 @Index('bind-users_id', ['userId'], {})
 @Entity('user_bind', { schema: 'joke' })
-export class UserBind {
+export class UserBindEntity {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id: number;
 
@@ -56,10 +56,10 @@ export class UserBind {
   })
   userId: number | null;
 
-  @ManyToOne(() => Users, (users) => users.userBinds, {
+  @ManyToOne(() => UsersEntity, (users) => users.userBinds, {
     onDelete: 'NO ACTION',
     onUpdate: 'NO ACTION',
   })
   @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
-  user: Users;
+  user: UsersEntity;
 }

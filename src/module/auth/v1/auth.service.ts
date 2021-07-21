@@ -3,13 +3,13 @@ import { RedisServiceN } from 'src/lib/redis/redis.service';
 import { NewHttpException } from '../../../common/exception/customize.exception';
 import { EmailLoginDto } from './dto/email-login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Users } from '../../entitys/Users';
+import { UsersEntity } from '../../../entitys/users.entity';
 import { Connection, InsertResult, Repository } from 'typeorm';
 import { length } from 'class-validator';
 import { tokenExpired } from '../../../common/constant/auth.constant';
 import { JwtService } from '@nestjs/jwt';
 import { OtherLoginDto } from './dto/other-login.dto';
-import { UserBind } from '../../entitys/UserBind';
+import { UserBindEntity } from '../../../entitys/user-bind.entity';
 import { CurrentToken } from '../../../common/decorator/current-token.decorator';
 
 export interface IAuthServiceOtherLoginError {
@@ -22,10 +22,10 @@ export class AuthService {
   private logger: Logger = new Logger('AuthService');
 
   constructor(
-    @InjectRepository(Users)
-    private readonly userRepository: Repository<Users>,
-    @InjectRepository(UserBind)
-    private readonly userBindRepository: Repository<UserBind>,
+    @InjectRepository(UsersEntity)
+    private readonly userRepository: Repository<UsersEntity>,
+    @InjectRepository(UserBindEntity)
+    private readonly userBindRepository: Repository<UserBindEntity>,
     private readonly redisService: RedisServiceN,
     private readonly jwtService: JwtService,
     //  数据库事务
@@ -33,7 +33,7 @@ export class AuthService {
   ) {}
 
   // 验证邮箱登录
-  public async verifyLogin(emailLoginDto: EmailLoginDto): Promise<Users> {
+  public async verifyLogin(emailLoginDto: EmailLoginDto): Promise<UsersEntity> {
     const result: number | null = await this.redisService.get(
       emailLoginDto.email,
     );
@@ -43,7 +43,7 @@ export class AuthService {
     // 走到这里证明验证码时正确的
     // 如果用户存在 那么返回用户 如果用户不存在则创建用户
     // 判断用户是否存在
-    const user: Users | undefined = await this.userRepository.findOne({
+    const user: UsersEntity | undefined = await this.userRepository.findOne({
       email: emailLoginDto.email,
     });
 
@@ -60,7 +60,7 @@ export class AuthService {
         await this.userRepository
           .createQueryBuilder()
           .insert()
-          .into(Users)
+          .into(UsersEntity)
           .values({
             email: emailLoginDto.email,
             username: emailLoginDto.email,
@@ -87,9 +87,9 @@ export class AuthService {
     type,
     avatar,
     nickname,
-  }: OtherLoginDto): Promise<IAuthServiceOtherLoginError | Users> {
+  }: OtherLoginDto): Promise<IAuthServiceOtherLoginError | UsersEntity> {
     // 先验证是否存在该第三方登录的数据
-    const isExists: UserBind | undefined =
+    const isExists: UserBindEntity | undefined =
       await this.userBindRepository.findOne({
         openid,
         type,
@@ -99,7 +99,7 @@ export class AuthService {
       const result: InsertResult = await this.userBindRepository
         .createQueryBuilder()
         .insert()
-        .into(UserBind)
+        .into(UserBindEntity)
         .values({ type, openid, avatar, nickname })
         .execute();
 
@@ -127,22 +127,7 @@ export class AuthService {
   }
 
   //检查用户是否黑名单
-  public async checkIfTheUserIsBlacklisted(user: Users): Promise<void> {
-    const queryRunner = this.connection.createQueryRunner();
-    await queryRunner.connect(); // 连接查询运行器
-    await queryRunner.startTransaction(); // 开始事务
-    try {
-      //  在这里执行事务
-      await queryRunner.manager.createQueryBuilder().insert();
-      //  在这里提交事务
-      await queryRunner.commitTransaction();
-    } catch (err) {
-      //  在这里回滚事务
-      await queryRunner.rollbackTransaction();
-    } finally {
-      // 释放数据库连接
-      await queryRunner.release();
-    }
+  public async checkIfTheUserIsBlacklisted(user: UsersEntity): Promise<void> {
     if (user.status === 1) {
       throw new NewHttpException('用户违反用户协定, 已被封禁', 401);
     }

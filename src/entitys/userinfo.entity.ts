@@ -1,8 +1,8 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Users } from './Users';
+import { UsersEntity } from './users.entity';
 
 @Entity('userinfo', { schema: 'joke' })
-export class Userinfo {
+export class UserinfoEntity {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id: number;
 
@@ -39,6 +39,6 @@ export class Userinfo {
   })
   hometown: string | null;
 
-  @OneToMany(() => Users, (users) => users.userinfo)
-  users: Users[];
+  @OneToMany(() => UsersEntity, (users) => users.userinfo)
+  users: UsersEntity[];
 }

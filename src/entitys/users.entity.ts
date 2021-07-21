@@ -7,15 +7,16 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { UserBind } from './UserBind';
-import { Userinfo } from './Userinfo';
+import { UserBindEntity } from './user-bind.entity';
+import { UserinfoEntity } from './userinfo.entity';
+import { hashSync } from 'bcryptjs';
 
 @Index('IDX_fe0bb3f6520ee0469504521e71', ['username'], { unique: true })
 @Index('IDX_97672ac88f789774dd47f7c8be', ['email'], { unique: true })
 @Index('IDX_a000cca60bcf04454e72769949', ['phone'], { unique: true })
 @Index('userinfo_id-user_id', ['userinfoId'], {})
 @Entity('users', { schema: 'joke' })
-export class Users {
+export class UsersEntity {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id', comment: '用户id' })
   id: number;
 
@@ -87,16 +88,28 @@ export class Users {
   })
   userinfoId: number | null;
 
-  @Column('varchar', { name: 'password', comment: '密码', length: 300 })
+  @Column('varchar', {
+    name: 'password',
+    comment: '密码',
+    length: 300,
+    transformer: {
+      to(value: string): string {
+        return hashSync(value);
+      },
+      from(value: string): string {
+        return value;
+      },
+    },
+  })
   password: string;
 
-  @OneToMany(() => UserBind, (userBind) => userBind.user)
-  userBinds: UserBind[];
+  @OneToMany(() => UserBindEntity, (userBind) => userBind.user)
+  userBinds: UserBindEntity[];
 
-  @ManyToOne(() => Userinfo, (userinfo) => userinfo.users, {
+  @ManyToOne(() => UserinfoEntity, (userinfo) => userinfo.users, {
     onDelete: 'NO ACTION',
     onUpdate: 'NO ACTION',
   })
   @JoinColumn([{ name: 'userinfo_id', referencedColumnName: 'id' }])
-  userinfo: Userinfo;
+  userinfo: UserinfoEntity;
 }

@@ -4,15 +4,22 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptor/transform.interceptor';
 import * as dotenv from 'dotenv-flow';
-import { NestExpressApplication } from '@nestjs/platform-express';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { Log4jsLogger } from '@nestx-log4js/core';
 
 dotenv.config();
-
+//    "@nestjs/platform-express": "^7.6.15",
+//"swagger-ui-express": "^4.1.6",
 const logger = new Logger('main.ts');
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter(),
+  );
 
   const config = new DocumentBuilder()
     .setTitle('嘻嘻哈哈移动端api接口文档')
@@ -33,7 +40,6 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor());
   //  开启cors
   app.enableCors();
-
   await app.listen(process.env.APP_PORT);
 }
 
@@ -42,3 +48,10 @@ bootstrap().then(() => {
     `api-docs: http://${process.env.APP_HOST}:${process.env.APP_PORT}/api-docs`,
   );
 });
+// express 320.61 单实例
+// 60k requests in 10.79s, 12 MB read
+// 21k errors (21k timeouts)
+
+// fastify 448.6 多实例
+// 46k requests in 10.62s, 16.3 MB read
+// 6k errors (6k timeouts)

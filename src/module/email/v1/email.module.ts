@@ -3,7 +3,7 @@ import { EmailService } from './email.service';
 import { EmailController } from './email.controller';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { sendEmailConfig } from 'src/config/send-email.config';
-import { RedisModule } from '../../../lib/redis/redis.module';
+import { RedisModule } from '@src/lib/redis/redis.module';
 
 @Module({
   imports: [MailerModule.forRootAsync(sendEmailConfig), RedisModule],

@@ -7,6 +7,8 @@ import { RedisModule as RedisModuleN } from './lib/redis/redis.module';
 import { EmailModule } from './module/email/v1/email.module';
 import { Log4jsModule } from '@nestx-log4js/core';
 import { UserModule } from './module/user/v1/user.module';
+import { ArticleModule } from './module/article/v1/article.module';
+import { TopicModule } from './module/topic/v1/topic.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { UserModule } from './module/user/v1/user.module';
     RedisModuleN,
     EmailModule,
     UserModule,
+    ArticleModule,
+    TopicModule,
   ],
   controllers: [],
   providers: [],

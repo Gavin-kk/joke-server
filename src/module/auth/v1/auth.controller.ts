@@ -4,16 +4,13 @@ import { EmailLoginDto } from './dto/email-login.dto';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from 'src/common/decorator/current-user.decorator';
-import { Users } from '../../entitys/Users';
+import { UsersEntity } from '@src/entitys/users.entity';
 import { PasswordLogin } from './dto/passwrod-login.dto';
 import { OtherLoginDto } from './dto/other-login.dto';
-import { CheckTokenGuard } from '../../../common/guard/check-token.guard';
-import { RedisServiceN } from '../../../lib/redis/redis.service';
-import {
-  tokenExpired,
-  tokenRedisKey,
-} from '../../../common/constant/auth.constant';
-import { NewHttpException } from '../../../common/exception/customize.exception';
+import { CheckTokenGuard } from 'src/common/guard/check-token.guard';
+import { RedisServiceN } from 'src/lib/redis/redis.service';
+import { tokenExpired, tokenRedisKey } from 'src/common/constant/auth.constant';
+import { NewHttpException } from 'src/common/exception/customize.exception';
 
 @ApiTags('授权模块')
 @Controller('api/v1/auth/login')
@@ -35,11 +32,16 @@ export class AuthController {
   })
   @Post('password')
   @UseGuards(AuthGuard('local'))
-  public async passwordLogin(@CurrentUser() user: Users) {
+  public async passwordLogin(
+    @CurrentUser() user: UsersEntity,
+  ): Promise<{ user: UsersEntity; token: string }> {
     // 验证用户是否黑名单
     await this.authService.checkIfTheUserIsBlacklisted(user);
     // 生成token
-    const token = this.authService.generateToken(user.id, user.password);
+    const token: string = this.authService.generateToken(
+      user.id,
+      user.password,
+    );
     try {
       // 把 token 写入缓存
       await this.redisService.set(
@@ -62,8 +64,10 @@ export class AuthController {
     description: '必须先通过api/v1/email/code获取验证码',
   })
   @Post('email')
-  public async emailLogin(@Body() emailLoginDto: EmailLoginDto) {
-    const user: Users = await this.authService.verifyLogin(emailLoginDto);
+  public async emailLogin(
+    @Body() emailLoginDto: EmailLoginDto,
+  ): Promise<{ user: UsersEntity; token: string }> {
+    const user: UsersEntity = await this.authService.verifyLogin(emailLoginDto);
     // 验证用户是否黑名单
     await this.authService.checkIfTheUserIsBlacklisted(user);
 
@@ -96,25 +100,29 @@ export class AuthController {
       '如果是第一次第三方登陆请在申请完本接口后 绑定邮箱页面直接申请邮箱登录接口 如果是第二次第三方登录申请本接口即可',
   })
   @Post('other')
-  public async otherLogin(@Body() otherLoginDto: OtherLoginDto) {
-    const result: IAuthServiceOtherLoginError | Users =
+  public async otherLogin(
+    @Body() otherLoginDto: OtherLoginDto,
+  ): Promise<
+    IAuthServiceOtherLoginError | { user: UsersEntity; token: string }
+  > {
+    const result: IAuthServiceOtherLoginError | UsersEntity =
       await this.authService.otherLogin(otherLoginDto);
 
     if ((result as IAuthServiceOtherLoginError).text) {
-      return result;
+      return result as IAuthServiceOtherLoginError;
     }
     // 验证用户是否黑名单
-    await this.authService.checkIfTheUserIsBlacklisted(result as Users);
+    await this.authService.checkIfTheUserIsBlacklisted(result as UsersEntity);
 
     const token: string = this.authService.generateToken(
-      (result as Users).id,
-      (result as Users).password,
+      (result as UsersEntity).id,
+      (result as UsersEntity).password,
     );
 
     try {
       // 把 token 写入缓存
       await this.redisService.set(
-        tokenRedisKey((result as Users).email),
+        tokenRedisKey((result as UsersEntity).email),
         token,
         tokenExpired,
       );
@@ -124,7 +132,7 @@ export class AuthController {
     }
 
     return {
-      user: result,
+      user: result as UsersEntity,
       token,
     };
   }
@@ -137,10 +145,11 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: '退出登录' })
+  @ApiBearerAuth()
   @Post('exit')
   @UseGuards(CheckTokenGuard)
   @UseGuards(AuthGuard('jwt'))
-  async exit(@CurrentUser() user: Users) {
+  async exit(@CurrentUser() user: UsersEntity): Promise<string> {
     try {
       await this.redisService.del(tokenRedisKey(user.email));
     } catch (err) {

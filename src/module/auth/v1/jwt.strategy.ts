@@ -1,17 +1,17 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy, StrategyOptions } from 'passport-jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Users } from '../../entitys/Users';
+import { UsersEntity } from '@src/entitys/users.entity';
 import { Repository } from 'typeorm';
-import { NewHttpException } from '../../../common/exception/customize.exception';
-import { UserBind } from '../../entitys/UserBind';
+import { NewHttpException } from '@src/common/exception/customize.exception';
+import { UserBindEntity } from '@src/entitys/user-bind.entity';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
-    @InjectRepository(Users)
-    private readonly usersRepository: Repository<Users>,
+    @InjectRepository(UsersEntity)
+    private readonly usersRepository: Repository<UsersEntity>,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -25,12 +25,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }: {
     id: number;
     password: string;
-  }): Promise<Users | UserBind> {
-    let user: Users | UserBind;
-    const userExists: Users | undefined = await this.usersRepository.findOne({
-      id,
-      password,
-    });
+  }): Promise<UsersEntity | UserBindEntity> {
+    let user: UsersEntity | UserBindEntity;
+    const userExists: UsersEntity | undefined =
+      await this.usersRepository.findOne({
+        id,
+        password,
+      });
     if (userExists && password === userExists.password) {
       user = userExists;
     } else {

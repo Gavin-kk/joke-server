@@ -13,7 +13,7 @@ export const databaseConfig: TypeOrmModuleAsyncOptions = {
     username: process.env.MYSQL_USER || 'root',
     password: process.env.MYSQL_PASSWORD,
     database: process.env.MYSQL_DATABASE,
-    entities: [join(__dirname, '../module/entitys/*.{ts,js}')],
+    entities: [join(__dirname, '../entitys/*.{ts,js}')],
     migrations: ['migration/*.ts'],
     timezone: 'UTC',
     charset: 'utf8mb4',
@@ -26,9 +26,9 @@ export const databaseConfig: TypeOrmModuleAsyncOptions = {
 
 export const redisConfig: RedisModuleAsyncOptions = {
   useFactory: (): RedisModuleOptions => ({
-    port: 6379,
-    host: '127.0.0.1',
-    password: '728156123asd',
+    port: +process.env.REDIS_PORT,
+    host: process.env.REDIS_HOST,
+    password: process.env.REDIS_PASSWORD,
     db: 0,
   }),
 };
