@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { RedisService } from 'nestjs-redis';
 import { Redis } from 'ioredis';
 
@@ -6,6 +6,7 @@ export type Ok = 'OK';
 
 @Injectable()
 export class RedisServiceN {
+  private logger: Logger = new Logger('RedisService');
   private client: Redis;
   constructor(private readonly redisService: RedisService) {
     this.getClient();

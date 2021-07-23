@@ -10,6 +10,8 @@ import {
 import { UserBindEntity } from './user-bind.entity';
 import { UserinfoEntity } from './userinfo.entity';
 import { hashSync } from 'bcryptjs';
+import { ArticleEntity } from './article.entity';
+import { CommentEntity } from './comment.entity';
 
 @Index('IDX_fe0bb3f6520ee0469504521e71', ['username'], { unique: true })
 @Index('IDX_97672ac88f789774dd47f7c8be', ['email'], { unique: true })
@@ -102,6 +104,12 @@ export class UsersEntity {
     },
   })
   password: string;
+
+  @OneToMany(() => ArticleEntity, (article) => article.user)
+  articles: ArticleEntity[];
+
+  @OneToMany(() => CommentEntity, (CommentEntity) => CommentEntity.user)
+  comments: CommentEntity[];
 
   @OneToMany(() => UserBindEntity, (userBind) => userBind.user)
   userBinds: UserBindEntity[];

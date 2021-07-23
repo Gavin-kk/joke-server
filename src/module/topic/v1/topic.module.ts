@@ -10,4 +10,9 @@ import { TopicEntity } from '@src/entitys/topic.entity';
   controllers: [TopicController],
   providers: [TopicService],
 })
-export class TopicModule {}
+export class TopicModule {
+  // implements NestModule
+  // public configure(consumer: MiddlewareConsumer): any {
+  //   consumer.apply(TestMiddleware).forRoutes(TopicController);
+  // }
+}

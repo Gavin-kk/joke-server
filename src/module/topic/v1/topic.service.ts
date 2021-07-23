@@ -1,9 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TopicClassifyEntity } from '@src/entitys/topic-classify.entity';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { NewHttpException } from '@src/common/exception/customize.exception';
 import { TopicEntity } from '@src/entitys/topic.entity';
+import { Worker } from 'worker_threads';
+import { join } from 'path';
 
 @Injectable()
 export class TopicService {
@@ -28,14 +30,32 @@ export class TopicService {
     }
   }
 
-  public async getTopicList(id: number): Promise<TopicClassifyEntity[]> {
+  // public async getTopicList(id: number): Promise<TopicClassifyEntity[]> {
+  public async getTopicList(id: number, pageNum?: number) {
+    if (isNaN(id) || isNaN(pageNum)) {
+      throw new NewHttpException('参数类型错误');
+    }
+    const pageSize = 10;
+
     try {
       return this.topicClassifyRepository
         .createQueryBuilder('t')
         .select()
         .leftJoinAndSelect('t.topics', 'topic')
-        .where('t.id = :id', { id })
-        .getMany();
+        .where((qb: SelectQueryBuilder<TopicClassifyEntity>): string => {
+          const subQuery: string = qb
+            .subQuery()
+            .createQueryBuilder()
+            .select(['topic.id'])
+            .from(TopicEntity, 'topic')
+            .orderBy('topic.id', 'ASC')
+            .offset((pageNum - 1) * pageSize)
+            .limit(1)
+            .getQuery();
+          return `topic.id >= (${subQuery})`;
+        })
+        .limit(pageSize)
+        .getOne();
     } catch (err) {
       this.logger.error(err, 'getTopicList出错');
       throw new NewHttpException('请求错误');

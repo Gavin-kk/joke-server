@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { ArticleEntity } from './article.entity';
 
 @Entity('article-classify', { schema: 'joke' })
 export class ArticleClassifyEntity {
@@ -30,4 +31,10 @@ export class ArticleClassifyEntity {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updateAt: Date | null;
+
+  @OneToMany(
+    () => ArticleEntity,
+    (ArticleEntity) => ArticleEntity.articleClassify,
+  )
+  articles: ArticleEntity[];
 }

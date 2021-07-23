@@ -9,7 +9,7 @@ import {
 import { UsersEntity } from './users.entity';
 
 @Index('bind-users_id', ['userId'], {})
-@Entity('user_bind', { schema: 'joke' })
+@Entity('user-bind', { schema: 'joke' })
 export class UserBindEntity {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
   id: number;

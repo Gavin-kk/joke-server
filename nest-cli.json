@@ -2,6 +2,6 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "assets": ["module/email/template/**/*"]
+    "assets": ["module/email/template/**/*","upload-file"]
   }
 }

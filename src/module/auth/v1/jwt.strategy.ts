@@ -27,11 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     password: string;
   }): Promise<UsersEntity | UserBindEntity> {
     let user: UsersEntity | UserBindEntity;
-    const userExists: UsersEntity | undefined =
-      await this.usersRepository.findOne({
-        id,
-        password,
-      });
+    const userExists: UsersEntity = await this.usersRepository.findOne(id);
     if (userExists && password === userExists.password) {
       user = userExists;
     } else {

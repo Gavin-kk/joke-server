@@ -4,7 +4,9 @@ import {
   RedisModuleAsyncOptions,
   RedisModuleOptions,
 } from 'nestjs-redis/dist/redis.interface';
-
+import { Redis } from 'ioredis';
+import { Logger } from '@nestjs/common';
+const logger: Logger = new Logger('databaseConfig');
 export const databaseConfig: TypeOrmModuleAsyncOptions = {
   useFactory: () => ({
     type: 'mysql',
@@ -30,5 +32,8 @@ export const redisConfig: RedisModuleAsyncOptions = {
     host: process.env.REDIS_HOST,
     password: process.env.REDIS_PASSWORD,
     db: 0,
+    onClientReady() {
+      logger.log('redisClientReady');
+    },
   }),
 };
