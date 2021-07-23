@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as dotenv from 'dotenv-flow';
 import multipart from 'fastify-multipart';
 import { Log4jsLogger } from '@nestx-log4js/core';
+import * as path from 'path';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -35,6 +36,11 @@ async function bootstrap() {
   // 第一个参数是路径 就是你要在那个url路径访问到这个 api 文档
   SwaggerModule.setup('api-docs', app, document);
 
+  // 启用静态资源服务
+  app.useStaticAssets({
+    root: path.join(__dirname, './upload-file'),
+    prefix: '/static',
+  });
   // 启用日志框架
   app.useLogger(app.get(Log4jsLogger));
   // 使用全局管道 验证

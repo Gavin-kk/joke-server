@@ -31,6 +31,7 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
       //  昵称登录
       user = await this.usersRepository.findOne({ nickname: username });
     }
+    console.log(user);
 
     if (user) {
       if (compareSync(password, user.password)) return user;

@@ -21,7 +21,7 @@ export class UploadService {
     //  传入多个文件
     const files: AsyncIterableIterator<MultipartFile> = req.files({
       limits: {
-        fileSize: 1024 * 1024,
+        fileSize: 1024 * 1024 * 5,
       },
     });
     return this.handleFiles(files);

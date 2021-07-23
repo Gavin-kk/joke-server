@@ -11,7 +11,6 @@ export class CheckTokenGuard implements CanActivate {
   constructor(private readonly redisService: RedisServiceN) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    console.log(2);
     const request: IFastifyRequest = context.switchToHttp().getRequest();
     const token: string = request.headers.authorization.replace('Bearer ', '');
     const user: UsersEntity = request.user;

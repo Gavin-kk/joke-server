@@ -55,7 +55,7 @@ export class ArticleEntity {
     default: () => 0,
     comment: '隐私状态 0所有人可见 1 仅自己可见',
   })
-  privacyStatus: number | null;
+  privacyStatus: 0 | 1 | null;
 
   @Column('varchar', {
     name: 'address',

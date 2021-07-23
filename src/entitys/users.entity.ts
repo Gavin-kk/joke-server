@@ -12,6 +12,7 @@ import { UserinfoEntity } from './userinfo.entity';
 import { hashSync } from 'bcryptjs';
 import { ArticleEntity } from './article.entity';
 import { CommentEntity } from './comment.entity';
+import { Exclude } from 'class-transformer';
 
 @Index('IDX_fe0bb3f6520ee0469504521e71', ['username'], { unique: true })
 @Index('IDX_97672ac88f789774dd47f7c8be', ['email'], { unique: true })
@@ -90,6 +91,7 @@ export class UsersEntity {
   })
   userinfoId: number | null;
 
+  @Exclude()
   @Column('varchar', {
     name: 'password',
     comment: '密码',
