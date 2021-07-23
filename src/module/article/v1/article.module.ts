@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ArticleClassifyEntity } from '@src/entitys/article-classify.entity';
 import { ArticleEntity } from '@src/entitys/article.entity';
 import { CommentEntity } from '@src/entitys/comment.entity';
+import { RedisModule } from '@src/lib/redis/redis.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { CommentEntity } from '@src/entitys/comment.entity';
       ArticleEntity,
       CommentEntity,
     ]),
+    RedisModule,
   ],
   controllers: [ArticleController],
   providers: [ArticleService],

@@ -4,6 +4,7 @@ import { IFastifyRequest } from '@src/app';
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UploadImagesDto } from '@src/module/upload/v1/dto/upload-images.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { Auth } from '@src/common/decorator/auth.decorator';
 
 @ApiTags('文件上传模块')
 @Controller('api/v1/upload')
@@ -16,7 +17,7 @@ export class UploadController {
     type: UploadImagesDto,
   })
   @Post('images')
-  @UseGuards(AuthGuard('jwt'))
+  // @Auth()
   public async uploadImage(@Req() request: IFastifyRequest) {
     return this.uploadService.uploadImages(request);
   }

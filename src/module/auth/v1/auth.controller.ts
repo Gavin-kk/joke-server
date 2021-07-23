@@ -11,6 +11,7 @@ import { CheckTokenGuard } from 'src/common/guard/check-token.guard';
 import { RedisServiceN } from 'src/lib/redis/redis.service';
 import { tokenExpired, tokenRedisKey } from 'src/common/constant/auth.constant';
 import { NewHttpException } from 'src/common/exception/customize.exception';
+import { Auth } from '@src/common/decorator/auth.decorator';
 
 @ApiTags('授权模块')
 @Controller('api/v1/auth/login')
@@ -147,8 +148,7 @@ export class AuthController {
   @ApiOperation({ summary: '退出登录' })
   @ApiBearerAuth()
   @Post('exit')
-  @UseGuards(CheckTokenGuard)
-  @UseGuards(AuthGuard('jwt'))
+  @Auth()
   async exit(@CurrentUser() user: UsersEntity): Promise<string> {
     try {
       await this.redisService.del(tokenRedisKey(user.email));

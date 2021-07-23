@@ -6,6 +6,7 @@ import { PublishDto } from './dto/publish.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '@src/common/decorator/current-user.decorator';
 import { UsersEntity } from '@src/entitys/users.entity';
+import { Auth } from '@src/common/decorator/auth.decorator';
 
 @ApiTags('文章模块')
 @Controller('api/v1/article')
@@ -21,7 +22,7 @@ export class ArticleController {
   @ApiOperation({ summary: '发布文章' })
   @ApiBearerAuth()
   @Post('publish')
-  @UseGuards(AuthGuard('jwt'))
+  @Auth()
   public async postArticle(
     @Body() publishDto: PublishDto,
     @CurrentUser() user: UsersEntity,
