@@ -3,13 +3,17 @@ import {
   Entity,
   Index,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
+  PrimaryColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { UsersEntity } from './users.entity';
 import { ArticleClassifyEntity } from './article-classify.entity';
 import { CommentEntity } from './comment.entity';
+import { TopicEntity } from '@src/entitys/topic.entity';
 
 export const enum ArticleType {
   Graphic, // 图文
@@ -104,14 +108,18 @@ export class ArticleEntity {
   @Column('int', { name: 'user_id', comment: '用户的id' })
   userId: number;
 
-  @Column('int', { name: 'article-classify_id', comment: '文章分类的id' })
-  articleClassifyId: number;
+  @Column('int', {
+    name: 'article-classify_id',
+    comment: '文章分类的id',
+    nullable: true,
+  })
+  articleClassifyId: number | null;
 
   @Column('int', {
     name: 'comment-status',
     nullable: true,
     comment: '文章的评论状态 0可用 1禁用',
-    default: () => "'0'",
+    default: () => 0,
   })
   commentStatus: number | null;
 
@@ -119,7 +127,7 @@ export class ArticleEntity {
     name: 'status',
     nullable: true,
     comment: '文章的状态 0可见 1禁用',
-    default: () => "'0'",
+    default: () => 0,
   })
   status: number | null;
 
@@ -164,4 +172,7 @@ export class ArticleEntity {
 
   @OneToMany(() => CommentEntity, (comment) => comment.article)
   comments: CommentEntity[];
+
+  @ManyToMany(() => TopicEntity, (TopicEntity) => TopicEntity.articles)
+  topics: TopicEntity[];
 }

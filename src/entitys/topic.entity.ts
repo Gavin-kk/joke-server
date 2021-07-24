@@ -3,10 +3,14 @@ import {
   Entity,
   Index,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { TopicClassifyEntity } from './topic-classify.entity';
+import { ArticleEntity } from '@src/entitys/article.entity';
 
 @Index('topic-classify_id', ['topicClassifyId'], {})
 @Entity('topic', { schema: 'joke' })
@@ -58,4 +62,13 @@ export class TopicEntity {
   )
   @JoinColumn([{ name: 'topic-classify_id', referencedColumnName: 'id' }])
   topicClassify: TopicClassifyEntity;
+
+  @ManyToMany(() => ArticleEntity, (Articles) => Articles.topics)
+  @JoinTable({
+    name: 'topic_articles_article',
+    joinColumns: [{ name: 'topicId', referencedColumnName: 'id' }],
+    inverseJoinColumns: [{ name: 'articleId', referencedColumnName: 'id' }],
+    schema: 'joke',
+  })
+  articles: ArticleEntity[];
 }

@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ArticleService } from './article.service';
 import { ArticleClassifyEntity } from '@src/entitys/article-classify.entity';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -7,6 +15,9 @@ import { CurrentUser } from '@src/common/decorator/current-user.decorator';
 import { UsersEntity } from '@src/entitys/users.entity';
 import { Auth } from '@src/common/decorator/auth.decorator';
 import { ArticleEntity } from '@src/entitys/article.entity';
+import { GetTopicArticleListDto } from '@src/module/article/v1/dto/get-topic-article-list.dto';
+import { GetClassifyListDto } from '@src/module/article/v1/dto/get-classify-list.dto';
+import { TopicEntity } from '@src/entitys/topic.entity';
 
 @ApiTags('文章模块')
 @Controller('api/v1/article')
@@ -14,28 +25,36 @@ export class ArticleController {
   constructor(private readonly articleClassifyService: ArticleService) {}
 
   @ApiOperation({ summary: '获取文章所有的分类' })
-  @Get('classify/list')
+  @Get('classify/all')
   public async getArticleClassify(): Promise<ArticleClassifyEntity[]> {
     return this.articleClassifyService.getAllList();
   }
 
-  @ApiOperation({ summary: '获取指定的文章详情' })
-  @Get(':id')
-  public async getArticleDetail(@Param('id') id: string) {
-    return this.articleClassifyService.getArticleDetail(+id);
+  @ApiOperation({
+    summary: '通过文章分类id获取文章列表',
+  })
+  @Get('classify/list')
+  public async getArticleListOfClassify(
+    @Query() { classifyId, pageNum }: GetClassifyListDto,
+  ): Promise<ArticleEntity[]> {
+    return this.articleClassifyService.getArticleListOfClassify(
+      +classifyId,
+      +pageNum,
+    );
+  }
+
+  @ApiOperation({ summary: '通过话题id获取文章列表' })
+  @Get('topic/list')
+  public async getTopicList(
+    @Query() { pageNum, topicId }: GetTopicArticleListDto,
+  ): Promise<TopicEntity[]> {
+    return await this.articleClassifyService.getTopicList(+topicId, +pageNum);
   }
 
   @ApiOperation({
-    summary: '通过id获取某一条分类下的所有文章',
+    summary: '发布文章',
+    description: 'ACId 和 isTopic 中最少需要有一个存在 ',
   })
-  @Get(':classifyId/list')
-  public async getArticleListOfClassify(
-    @Param('classifyId') classifyId: string,
-  ): Promise<ArticleEntity[]> {
-    return this.articleClassifyService.getArticleListOfClassify(+classifyId);
-  }
-
-  @ApiOperation({ summary: '发布文章' })
   @ApiBearerAuth()
   @Post('publish')
   @Auth()
@@ -46,6 +65,13 @@ export class ArticleController {
     await this.articleClassifyService.createArticle(publishDto, user);
   }
 
+  @ApiOperation({ summary: '获取指定的文章详情' })
+  @Get('detail/:id')
+  public async getArticleDetail(@Param('id') id: string) {
+    return this.articleClassifyService.getArticleDetail(+id);
+  }
+
+  @ApiOperation({ summary: '获取指定' })
   @ApiOperation({
     summary: '通过文章id删除文章',
     description: '只能删除自己的',

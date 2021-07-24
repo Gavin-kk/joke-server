@@ -63,8 +63,8 @@ export class CommentEntity {
   user: UsersEntity;
 
   @ManyToOne(() => CommentEntity, (comment) => comment.comments, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'target_id', referencedColumnName: 'id' }])
   target: CommentEntity;

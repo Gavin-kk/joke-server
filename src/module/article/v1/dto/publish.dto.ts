@@ -1,6 +1,7 @@
 import { IsNotEmpty, IsNumber, IsString, Max, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ArticleType } from '@src/entitys/article.entity';
+import { ClassifyType } from '@src/module/article/v1/article.service';
 
 export class PublishDto {
   @ApiProperty({ description: '文章内容' })
@@ -22,9 +23,16 @@ export class PublishDto {
   @Max(2, { message: '最大不得大于2' })
   type: ArticleType;
 
-  @ApiProperty({ description: '文章分类的id' })
-  @IsNumber({ allowNaN: false }, { message: '不是number类型' })
+  @ApiProperty({ description: '文章分类的id', required: false })
   ACId: number;
+
+  @ApiProperty({ description: '文章所属的分类 0 代表文章分类 1 代表话题分类' })
+  isTopic?: ClassifyType;
+
+  @ApiProperty({
+    description: '话题分类的id 文章如果属于话题分类 则此参数必须传递',
+  })
+  topicId?: number;
 
   @ApiProperty({
     description:
