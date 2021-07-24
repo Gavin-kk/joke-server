@@ -2,7 +2,13 @@
 // import { PasswordLogin } from './passwrod-login.dto';  extends PartialType(PasswordLogin)
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  Length,
+} from 'class-validator';
 
 export class EmailLoginDto {
   @ApiProperty({ description: '邮箱' })
@@ -13,9 +19,8 @@ export class EmailLoginDto {
 
   @ApiProperty({ description: '邮箱的验证码' })
   @IsNotEmpty({ message: '验证码不可为空' })
-  @IsString({ message: '需要string类型' })
-  @Length(6, 6, { message: '验证码无效' })
-  VCode: string;
+  @IsNumber({}, { message: '需要number类型' })
+  VCode: number;
 
   @ApiProperty({ description: '用户第一次登录时须携带密码', required: false })
   password?: string;

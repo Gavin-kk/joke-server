@@ -6,11 +6,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UsersEntity } from '../../../entitys/users.entity';
 import { Connection, InsertResult, Repository } from 'typeorm';
 import { length } from 'class-validator';
-import { tokenExpired } from '../../../common/constant/auth.constant';
+import { TOKEN_EXPIRED } from '../../../common/constant/auth.constant';
 import { JwtService } from '@nestjs/jwt';
 import { OtherLoginDto } from './dto/other-login.dto';
 import { UserBindEntity } from '../../../entitys/user-bind.entity';
 import { CurrentToken } from '../../../common/decorator/current-token.decorator';
+import {
+  REDIS_EMAIL_KEY_METHOD,
+  REDIS_LOGIN_KEY_METHOD,
+} from '@src/common/constant/email.constant';
 
 export interface IAuthServiceOtherLoginError {
   text: string;
@@ -28,17 +32,15 @@ export class AuthService {
     private readonly userBindRepository: Repository<UserBindEntity>,
     private readonly redisService: RedisServiceN,
     private readonly jwtService: JwtService,
-    //  数据库事务
-    private readonly connection: Connection,
   ) {}
 
   // 验证邮箱登录
   public async verifyLogin(emailLoginDto: EmailLoginDto): Promise<UsersEntity> {
-    const result: number | null = await this.redisService.get(
-      emailLoginDto.email,
+    const redisEmailExists: number | null = await this.redisService.get(
+      REDIS_LOGIN_KEY_METHOD(emailLoginDto.email),
     );
-    if (!result || String(result) !== emailLoginDto.VCode) {
-      throw new NewHttpException('验证码不正确', 400);
+    if (!redisEmailExists || redisEmailExists !== emailLoginDto.VCode) {
+      throw new NewHttpException('验证码不正确');
     }
     // 走到这里证明验证码时正确的
     // 如果用户存在 那么返回用户 如果用户不存在则创建用户
@@ -94,7 +96,7 @@ export class AuthService {
         openid,
         type,
       });
-    // 如果不存在 则在表中记录该用户第三方登录数据 然后抛出异常让前端处理跳转到绑定邮箱页面
+    // 如果不存在 则在表中记录该用户第三方登录数据 然后抛出异常让前端处理跳转到绑定邮箱密码页面
     if (!isExists) {
       const result: InsertResult = await this.userBindRepository
         .createQueryBuilder()
@@ -123,7 +125,7 @@ export class AuthService {
 
   // 生成token
   public generateToken(id: number, password: string): string {
-    return this.jwtService.sign({ id, password }, { expiresIn: tokenExpired });
+    return this.jwtService.sign({ id, password }, { expiresIn: TOKEN_EXPIRED });
   }
 
   //检查用户是否黑名单

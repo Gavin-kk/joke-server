@@ -7,6 +7,7 @@ import * as stream from 'stream';
 import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuid } from 'uuid';
+import { UPLOAD_FILES_SIZE_LIMIT } from '@src/common/constant/upload.constant';
 
 @Injectable()
 export class UploadService {
@@ -21,7 +22,7 @@ export class UploadService {
     //  传入多个文件
     const files: AsyncIterableIterator<MultipartFile> = req.files({
       limits: {
-        fileSize: 1024 * 1024 * 5,
+        fileSize: UPLOAD_FILES_SIZE_LIMIT,
       },
     });
     return this.handleFiles(files);

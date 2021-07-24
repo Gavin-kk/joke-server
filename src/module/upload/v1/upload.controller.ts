@@ -11,7 +11,10 @@ export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ description: '上传多个图片, 文件大小限制5M' })
+  @ApiOperation({
+    summary: '图片上传模块',
+    description: '上传多个图片, 文件大小限制5M',
+  })
   @ApiBody({
     type: UploadImagesDto,
   })

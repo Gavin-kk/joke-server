@@ -9,7 +9,10 @@ import { PasswordLogin } from './dto/passwrod-login.dto';
 import { OtherLoginDto } from './dto/other-login.dto';
 import { CheckTokenGuard } from 'src/common/guard/check-token.guard';
 import { RedisServiceN } from 'src/lib/redis/redis.service';
-import { tokenExpired, tokenRedisKey } from 'src/common/constant/auth.constant';
+import {
+  TOKEN_EXPIRED,
+  TOKEN_REDIS_KEY_METHOD,
+} from 'src/common/constant/auth.constant';
 import { NewHttpException } from 'src/common/exception/customize.exception';
 import { Auth } from '@src/common/decorator/auth.decorator';
 
@@ -46,9 +49,9 @@ export class AuthController {
     try {
       // 把 token 写入缓存
       await this.redisService.set(
-        tokenRedisKey(user.email),
+        TOKEN_REDIS_KEY_METHOD(user.email),
         token,
-        tokenExpired,
+        TOKEN_EXPIRED,
       );
     } catch (err) {
       this.logger.log(err, '账号密码登录token写入缓存失败');
@@ -76,14 +79,13 @@ export class AuthController {
       user.id,
       user.password,
     );
-    delete user.password;
 
     try {
       // 把 token 写入缓存
       await this.redisService.set(
-        tokenRedisKey(user.email),
+        TOKEN_REDIS_KEY_METHOD(user.email),
         token,
-        tokenExpired,
+        TOKEN_EXPIRED,
       );
     } catch (err) {
       this.logger.log(err, 'email登录token写入缓存失败');
@@ -123,9 +125,9 @@ export class AuthController {
     try {
       // 把 token 写入缓存
       await this.redisService.set(
-        tokenRedisKey((result as UsersEntity).email),
+        TOKEN_REDIS_KEY_METHOD((result as UsersEntity).email),
         token,
-        tokenExpired,
+        TOKEN_EXPIRED,
       );
     } catch (err) {
       this.logger.log(err, '第三方登录token写入缓存失败');
@@ -151,7 +153,7 @@ export class AuthController {
   @Auth()
   async exit(@CurrentUser() user: UsersEntity): Promise<string> {
     try {
-      await this.redisService.del(tokenRedisKey(user.email));
+      await this.redisService.del(TOKEN_REDIS_KEY_METHOD(user.email));
     } catch (err) {
       this.logger.error(err, 'redis删除token出错');
       throw new NewHttpException('退出失败', 400);

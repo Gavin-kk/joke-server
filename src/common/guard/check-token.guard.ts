@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { RedisServiceN } from '@src/lib/redis/redis.service';
 import { UsersEntity } from '@src/entitys/users.entity';
-import { tokenRedisKey } from '../constant/auth.constant';
+import { TOKEN_REDIS_KEY_METHOD } from '../constant/auth.constant';
 import { NewHttpException } from '../exception/customize.exception';
 import { IFastifyRequest } from '@src/app';
 
@@ -15,7 +15,7 @@ export class CheckTokenGuard implements CanActivate {
     const token: string = request.headers.authorization.replace('Bearer ', '');
     const user: UsersEntity = request.user;
     const whetherTheTokenIsInvalid: string = await this.redisService.get(
-      tokenRedisKey(user.email),
+      TOKEN_REDIS_KEY_METHOD(user.email),
     );
 
     if (whetherTheTokenIsInvalid !== token) {
