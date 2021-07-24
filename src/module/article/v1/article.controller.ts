@@ -103,4 +103,12 @@ export class ArticleController {
   ): Promise<void> {
     await this.articleService.removeArticle(+id, user);
   }
+
+  @ApiOperation({ summary: '搜索文章' })
+  @Get('search')
+  public async searchArticles(
+    @Query('content') content: string,
+  ): Promise<ArticleEntity> {
+    return this.articleService.searchArticles(content);
+  }
 }

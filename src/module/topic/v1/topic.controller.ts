@@ -1,7 +1,6 @@
-import { Controller, Get, Logger, Param } from '@nestjs/common';
+import { Controller, Get, Logger, Param, Query } from '@nestjs/common';
 import { TopicService } from './topic.service';
-import { ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
-import { GetTopicListDto } from './dto/get-topic-list.dto';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TopicEntity } from '@src/entitys/topic.entity';
 import { TopicClassifyEntity } from '@src/entitys/topic-classify.entity';
 
@@ -38,5 +37,13 @@ export class TopicController {
   @Get('popular/list')
   public async getPopularList(): Promise<TopicEntity[]> {
     return this.topicService.getPopularList();
+  }
+
+  @ApiOperation({ summary: '搜索话题' })
+  @Get('search')
+  public async searchTopic(
+    @Query('content') content: string,
+  ): Promise<TopicEntity> {
+    return this.topicService.searchTopic(content);
   }
 }

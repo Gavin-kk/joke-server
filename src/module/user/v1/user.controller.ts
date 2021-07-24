@@ -1,15 +1,18 @@
-import { Controller, Get, Query, Req, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { UserService } from './user.service';
-import * as crypto from 'crypto';
-import { IFastifyRequest } from '@src/app';
 import { FastifyReply } from 'fastify';
+import { ApiOperation } from '@nestjs/swagger';
+import { UsersEntity } from '@src/entitys/users.entity';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get('userinfo')
-  async getUserInfo(@Res() res: FastifyReply) {
-    res.send('hello,word');
+  @ApiOperation({ summary: '搜索用户' })
+  @Get('search')
+  public async getUserInfo(
+    @Query('content') content: string,
+  ): Promise<UsersEntity> {
+    return this.userService.searchUser(content);
   }
 }

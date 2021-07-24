@@ -4,8 +4,7 @@ import { TopicClassifyEntity } from '@src/entitys/topic-classify.entity';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { NewHttpException } from '@src/common/exception/customize.exception';
 import { TopicEntity } from '@src/entitys/topic.entity';
-import { Worker } from 'worker_threads';
-import { join } from 'path';
+import { isEmpty } from 'class-validator';
 
 @Injectable()
 export class TopicService {
@@ -64,5 +63,13 @@ export class TopicService {
 
   public async getPopularList(): Promise<TopicEntity[]> {
     return this.topicRepository.createQueryBuilder().limit(10).getMany();
+  }
+  // 搜索话题
+  public async searchTopic(content: string) {
+    if (isEmpty(content)) throw new NewHttpException('参数错误');
+    return this.topicRepository
+      .createQueryBuilder('t')
+      .where('t.title like :name', { name: `%${content}%` })
+      .getOne();
   }
 }

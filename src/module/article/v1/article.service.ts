@@ -243,6 +243,17 @@ export class ArticleService {
       .getMany();
   }
 
+  // 搜索
+  public async searchArticles(content: string) {
+    if (!content) throw new NewHttpException('参数错误');
+    return this.articleRepository
+      .createQueryBuilder('art')
+      .select()
+      .where('art.title like :name', { name: `%${content}%` })
+      .andWhere('art.privacy-status = 0')
+      .getOne();
+  }
+
   private articleList() {
     return this.articleRepository
       .createQueryBuilder('art')
