@@ -22,12 +22,12 @@ import { TopicEntity } from '@src/entitys/topic.entity';
 @ApiTags('文章模块')
 @Controller('api/v1/article')
 export class ArticleController {
-  constructor(private readonly articleClassifyService: ArticleService) {}
+  constructor(private readonly articleService: ArticleService) {}
 
   @ApiOperation({ summary: '获取文章所有的分类' })
   @Get('classify/all')
   public async getArticleClassify(): Promise<ArticleClassifyEntity[]> {
-    return this.articleClassifyService.getAllList();
+    return this.articleService.getAllList();
   }
 
   @ApiOperation({
@@ -37,10 +37,7 @@ export class ArticleController {
   public async getArticleListOfClassify(
     @Query() { classifyId, pageNum }: GetClassifyListDto,
   ): Promise<ArticleEntity[]> {
-    return this.articleClassifyService.getArticleListOfClassify(
-      +classifyId,
-      +pageNum,
-    );
+    return this.articleService.getArticleListOfClassify(+classifyId, +pageNum);
   }
 
   @ApiOperation({ summary: '通过话题id获取文章列表' })
@@ -48,7 +45,7 @@ export class ArticleController {
   public async getTopicList(
     @Query() { pageNum, topicId }: GetTopicArticleListDto,
   ): Promise<TopicEntity[]> {
-    return await this.articleClassifyService.getTopicList(+topicId, +pageNum);
+    return await this.articleService.getTopicList(+topicId, +pageNum);
   }
 
   @ApiOperation({
@@ -62,26 +59,48 @@ export class ArticleController {
     @Body() publishDto: PublishDto,
     @CurrentUser() user: UsersEntity,
   ): Promise<void> {
-    await this.articleClassifyService.createArticle(publishDto, user);
+    await this.articleService.createArticle(publishDto, user);
+  }
+
+  @ApiOperation({ summary: '获取当前用户的文章列表' })
+  @ApiBearerAuth()
+  @Get('user/list')
+  @Auth()
+  public async getCurrentUserArticle(
+    @CurrentUser() user: UsersEntity,
+    @Query('pageNumber') pageNumber: string,
+  ): Promise<ArticleEntity[]> {
+    return this.articleService.getCurrentUserArticle(user, +pageNumber);
   }
 
   @ApiOperation({ summary: '获取指定的文章详情' })
   @Get('detail/:id')
-  public async getArticleDetail(@Param('id') id: string) {
-    return this.articleClassifyService.getArticleDetail(+id);
+  public async getArticleDetail(
+    @Param('id') id: string,
+  ): Promise<ArticleEntity> {
+    return this.articleService.getArticleDetail(+id);
   }
 
-  @ApiOperation({ summary: '获取指定' })
+  @ApiOperation({ summary: '获取指定用户的文章列表' })
+  @Get('other/user/list')
+  public async getUserArticle(
+    @Query('id') id: string,
+    @Query('pageNum') pageNum: string,
+  ) {
+    return this.articleService.getOtherUserArticle(+id, +pageNum);
+  }
+
   @ApiOperation({
     summary: '通过文章id删除文章',
     description: '只能删除自己的',
   })
+  @ApiBearerAuth()
   @Delete('/delete/:id')
   @Auth()
   public async deleteArticle(
     @Param('id') id: string,
     @CurrentUser() user: UsersEntity,
   ): Promise<void> {
-    await this.articleClassifyService.removeArticle(+id, user);
+    await this.articleService.removeArticle(+id, user);
   }
 }

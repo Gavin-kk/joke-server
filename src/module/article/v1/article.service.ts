@@ -1,10 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ArticleClassifyEntity } from '@src/entitys/article-classify.entity';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository } from 'typeorm';
 import { NewHttpException } from '@src/common/exception/customize.exception';
 import { ArticleEntity, ArticleType } from '@src/entitys/article.entity';
-import { CommentEntity } from '@src/entitys/comment.entity';
 import { PublishDto } from '@src/module/article/v1/dto/publish.dto';
 import { isNumber } from 'class-validator';
 import { UsersEntity } from '@src/entitys/users.entity';
@@ -33,7 +32,7 @@ export const enum ClassifyType {
 export class ArticleService {
   private logger: Logger = new Logger('ArticleClassifyService');
 
-  private pageSize = 0;
+  private pageSize = 10;
 
   constructor(
     @InjectRepository(ArticleClassifyEntity)
@@ -49,8 +48,8 @@ export class ArticleService {
   public async getAllList(): Promise<ArticleClassifyEntity[]> {
     try {
       return this.articleClassifyRepository
-        .createQueryBuilder('a')
-        .select(['a.id', 'a.title'])
+        .createQueryBuilder()
+        .select()
         .getMany();
     } catch (err) {
       this.logger.error(err, '查询文章分类失败');
@@ -170,17 +169,12 @@ export class ArticleService {
     this.checkIsNaN(id);
 
     try {
-      return this.articleRepository
-        .createQueryBuilder('c')
-        .select()
-        .orderBy('c.like-count', 'DESC')
-        .leftJoinAndSelect('c.user', 'users')
-        .leftJoinAndSelect('users.userinfo', 'userinfo')
-        .leftJoinAndSelect('c.share', 'share')
-        .loadRelationCountAndMap('c.comment-count', 'c.comments') // 计算comment表中与本表有关联的数量 字段映射为 comment-count
-        .where('c.article-classify_id = :id', { id })
-        .skip((pageNumber - 1) * this.pageSize) // offset
-        .take(this.pageSize) // limit
+      return this.articleList()
+        .orderBy('art.like-count', 'DESC')
+        .where('art.article-classify_id = :id', { id })
+        .andWhere('art.privacy-status = 0')
+        .offset((pageNumber - 1) * this.pageSize) // offset
+        .limit(this.pageSize) // limit
         .getMany();
     } catch (err) {
       this.logger.error(err, '通过文章分类id获取文章列表出错');
@@ -207,20 +201,56 @@ export class ArticleService {
     pageNumber: number,
   ): Promise<TopicEntity[]> {
     this.checkIsNaN(id, pageNumber);
+    const pageNum: number = (pageNumber - 1) * this.pageSize;
 
-    const pageSize = 5;
-    const pageNum = (pageNumber - 1) * pageSize;
     return this.topicRepository
       .createQueryBuilder('a')
       .select()
       .leftJoinAndSelect('a.articles', 'art')
       .leftJoinAndSelect('art.user', 'user')
+      .leftJoinAndSelect('art.share', 'share')
       .leftJoinAndSelect('user.userinfo', 'userinfo')
       .loadRelationCountAndMap('art.comment-count', 'art.comments')
       .where('a.id = :id', { id })
-      .limit(pageSize)
+      .andWhere('art.privacy-status = 0')
+      .limit(this.pageSize)
       .offset(pageNum)
       .getMany();
+  }
+
+  public async getCurrentUserArticle(user: UsersEntity, pageNumber: number) {
+    this.checkIsNaN(pageNumber);
+    const pageNum: number = (pageNumber - 1) * this.pageSize;
+
+    return this.articleRepository
+      .createQueryBuilder('a')
+      .select()
+      .where('a.user_id = :id', { id: user.id })
+      .orderBy('a.id', 'DESC')
+      .limit(this.pageSize)
+      .offset(pageNum)
+      .getMany();
+  }
+
+  // 获取指定用户的文章列表
+  public async getOtherUserArticle(id: number, pageNumber: number) {
+    this.checkIsNaN(id, pageNumber);
+    return this.articleList()
+      .where('art.user_id = :id', { id })
+      .andWhere('art.privacy-status = 0')
+      .limit(this.pageSize)
+      .offset((pageNumber - 1) * this.pageSize)
+      .getMany();
+  }
+
+  private articleList() {
+    return this.articleRepository
+      .createQueryBuilder('art')
+      .select()
+      .leftJoinAndSelect('art.user', 'user')
+      .leftJoinAndSelect('art.share', 'share')
+      .leftJoinAndSelect('user.userinfo', 'userinfo')
+      .loadRelationCountAndMap('art.comment-count', 'art.comments');
   }
 
   private checkIsNaN(...num: number[]) {
