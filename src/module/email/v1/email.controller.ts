@@ -11,6 +11,6 @@ export class EmailController {
   @ApiOperation({ summary: '发送邮件' })
   @Get('code')
   public sendEmail(@Query() { email, type }: SendEmailDto) {
-    return this.emailService.sendEmailCode(email, type);
+    return this.emailService.sendEmailCode(email, +type);
   }
 }

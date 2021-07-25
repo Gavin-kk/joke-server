@@ -8,11 +8,12 @@ import { JwtStrategy } from './jwt.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { RedisModule } from '@src/lib/redis/redis.module';
 import { UserBindEntity } from '@src/entitys/user-bind.entity';
+import { UserinfoEntity } from '@src/entitys/userinfo.entity';
 
 @Module({
   imports: [
     RedisModule,
-    TypeOrmModule.forFeature([UsersEntity, UserBindEntity]),
+    TypeOrmModule.forFeature([UsersEntity, UserBindEntity, UserinfoEntity]),
     JwtModule.registerAsync({
       useFactory: () => ({ secret: process.env.JWT_SECRET }),
     }),

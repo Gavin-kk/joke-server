@@ -19,6 +19,7 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
       passwordField: 'password',
     } as IStrategyOptions);
   }
+
   public async validate(username: string, password: string) {
     let user: UsersEntity;
     if (isEmail(username)) {
@@ -31,10 +32,14 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
       //  昵称登录
       user = await this.usersRepository.findOne({ nickname: username });
     }
-    console.log(user);
 
     if (user) {
-      if (compareSync(password, user.password)) return user;
+      if (compareSync(password, user.password)) {
+        if (user.status !== 0) {
+          throw new NewHttpException('用户已被列入黑名单');
+        }
+        return user;
+      }
     } else {
       throw new NewHttpException('账号或密码错误', 400);
     }

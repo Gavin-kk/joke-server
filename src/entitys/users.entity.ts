@@ -13,6 +13,7 @@ import { hashSync } from 'bcryptjs';
 import { ArticleEntity } from './article.entity';
 import { CommentEntity } from './comment.entity';
 import { Exclude } from 'class-transformer';
+import { UserArticleLikeEntity } from './user-article-like.entity';
 
 @Index('IDX_fe0bb3f6520ee0469504521e71', ['username'], { unique: true })
 @Index('IDX_97672ac88f789774dd47f7c8be', ['email'], { unique: true })
@@ -122,4 +123,10 @@ export class UsersEntity {
   })
   @JoinColumn([{ name: 'userinfo_id', referencedColumnName: 'id' }])
   userinfo: UserinfoEntity;
+
+  @OneToMany(
+    () => UserArticleLikeEntity,
+    (userArticlesLike) => userArticlesLike.user,
+  )
+  userArticlesLikes: UserArticleLikeEntity[];
 }

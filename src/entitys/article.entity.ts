@@ -3,17 +3,16 @@ import {
   Entity,
   Index,
   JoinColumn,
-  JoinTable,
   ManyToMany,
   ManyToOne,
   OneToMany,
-  PrimaryColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { UsersEntity } from './users.entity';
 import { ArticleClassifyEntity } from './article-classify.entity';
 import { CommentEntity } from './comment.entity';
 import { TopicEntity } from '@src/entitys/topic.entity';
+import { UserArticleLikeEntity } from './user-article-like.entity';
 
 export const enum ArticleType {
   Graphic, // 图文
@@ -175,4 +174,10 @@ export class ArticleEntity {
 
   @ManyToMany(() => TopicEntity, (TopicEntity) => TopicEntity.articles)
   topics: TopicEntity[];
+
+  @OneToMany(
+    () => UserArticleLikeEntity,
+    (userArticlesLike) => userArticlesLike.article,
+  )
+  userArticlesLikes: UserArticleLikeEntity[];
 }

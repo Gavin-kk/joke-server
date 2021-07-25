@@ -7,7 +7,7 @@ import { IFastifyRequest } from '@src/app';
 
 // 必须在jwt策略执行完毕后使用此守卫
 @Injectable()
-export class CheckTokenGuard implements CanActivate {
+export class CheckLoginGuard implements CanActivate {
   constructor(private readonly redisService: RedisServiceN) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

@@ -1,20 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RedisServiceN } from 'src/lib/redis/redis.service';
-import { NewHttpException } from '../../../common/exception/customize.exception';
+import { NewHttpException } from '@src/common/exception/customize.exception';
 import { EmailLoginDto } from './dto/email-login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UsersEntity } from '../../../entitys/users.entity';
-import { Connection, InsertResult, Repository } from 'typeorm';
+import { UsersEntity } from '@src/entitys/users.entity';
+import { Connection, InsertResult, QueryRunner, Repository } from 'typeorm';
 import { length } from 'class-validator';
-import { TOKEN_EXPIRED } from '../../../common/constant/auth.constant';
+import { TOKEN_EXPIRED } from '@src/common/constant/auth.constant';
 import { JwtService } from '@nestjs/jwt';
 import { OtherLoginDto } from './dto/other-login.dto';
 import { UserBindEntity } from '../../../entitys/user-bind.entity';
-import { CurrentToken } from '../../../common/decorator/current-token.decorator';
 import {
   REDIS_EMAIL_KEY_METHOD,
   REDIS_LOGIN_KEY_METHOD,
 } from '@src/common/constant/email.constant';
+import { OtherBindEmailDto } from '@src/module/auth/v1/dto/other-bind-email.dto';
+import { UserinfoEntity } from '@src/entitys/userinfo.entity';
 
 export interface IAuthServiceOtherLoginError {
   text: string;
@@ -32,17 +33,13 @@ export class AuthService {
     private readonly userBindRepository: Repository<UserBindEntity>,
     private readonly redisService: RedisServiceN,
     private readonly jwtService: JwtService,
+    private readonly connection: Connection,
   ) {}
 
   // 验证邮箱登录
   public async verifyLogin(emailLoginDto: EmailLoginDto): Promise<UsersEntity> {
-    const redisEmailExists: number | null = await this.redisService.get(
-      REDIS_LOGIN_KEY_METHOD(emailLoginDto.email),
-    );
-    if (!redisEmailExists || redisEmailExists !== emailLoginDto.VCode) {
-      throw new NewHttpException('验证码不正确');
-    }
-    // 走到这里证明验证码时正确的
+    // 验证验证码是否正确
+    await this.checkVCode(emailLoginDto.email, emailLoginDto.VCode);
     // 如果用户存在 那么返回用户 如果用户不存在则创建用户
     // 判断用户是否存在
     const user: UsersEntity | undefined = await this.userRepository.findOne({
@@ -50,6 +47,8 @@ export class AuthService {
     });
 
     if (user) {
+      // 检查用户是否黑名单
+      this.checkIfTheUserIsBlacklisted(user);
       return user;
     } else if (emailLoginDto.password) {
       // 验证密码格式是否正确
@@ -118,8 +117,74 @@ export class AuthService {
       } as IAuthServiceOtherLoginError;
     }
 
-    return await this.userRepository.findOne({
+    const user: UsersEntity = await this.userRepository.findOne({
       id: isExists.userId,
+    });
+    // 验证用户是否黑名单
+    this.checkIfTheUserIsBlacklisted(user);
+    return user;
+  }
+
+  public async otherLoginBindEmail({
+    password,
+    VCode,
+    email,
+    userBindId,
+  }: OtherBindEmailDto): Promise<UsersEntity> {
+    // 验证验证码是否正确
+    await this.checkVCode(email, VCode);
+    // 首先验证该邮箱或者说用户是否已经存在了
+    const isBind: UsersEntity | undefined = await this.userRepository.findOne({
+      email,
+    });
+
+    if (isBind) {
+      // 检查用户被封
+      this.checkIfTheUserIsBlacklisted(isBind);
+      //  要绑定的邮箱存在 和当前用户直接绑定 无视密码
+      await this.userBindRepository
+        .createQueryBuilder()
+        .update()
+        .set({ userId: isBind.id })
+        .where('id = :userBindId', { userBindId })
+        .execute();
+      return isBind;
+    } else {
+      //  生成用户 和 绑定userBindid 生成userinfo数据
+      // 开启数据库事务
+      const queryRunner: QueryRunner = this.connection.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction('REPEATABLE READ');
+      try {
+        // 创建用户
+        const user: InsertResult = await queryRunner.manager
+          .createQueryBuilder(UsersEntity, 'user')
+          .insert()
+          .values({ email, password, username: email })
+          .execute();
+        // 创建用户详情
+        await queryRunner.manager
+          .createQueryBuilder(UserinfoEntity, 'userinfo')
+          .insert()
+          .values({ age: 18, emotion: '保密', job: '保密' }) // 只是没有信息
+          .execute();
+        // 和以创建的绑定信息绑定邮箱
+        await queryRunner.manager
+          .createQueryBuilder(UserBindEntity, 'bind')
+          .update()
+          .set({ userId: user.identifiers[0].id })
+          .where('id = :userBindId', { userBindId })
+          .execute();
+        await queryRunner.commitTransaction();
+      } catch (err) {
+        this.logger.error(err, '第三方账号绑定用户,邮箱出错');
+        await queryRunner.rollbackTransaction();
+      } finally {
+        await queryRunner.release();
+      }
+    }
+    return await this.userRepository.findOne({
+      email,
     });
   }
 
@@ -129,9 +194,21 @@ export class AuthService {
   }
 
   //检查用户是否黑名单
-  public async checkIfTheUserIsBlacklisted(user: UsersEntity): Promise<void> {
+  private checkIfTheUserIsBlacklisted(user: UsersEntity): void {
     if (user.status === 1) {
-      throw new NewHttpException('用户违反用户协定, 已被封禁', 401);
+      throw new NewHttpException('用户违反用户协定, 已被封禁', 403);
+    }
+  }
+
+  // 验证验证码是否正确
+  private async checkVCode(email: string, VCode: number): Promise<void> {
+    // 验证邮箱和密码是否正确
+    const redisEmailCodeIsExists: number | null = await this.redisService.get(
+      REDIS_LOGIN_KEY_METHOD(email),
+    );
+    // 验证验证码是否正确
+    if (redisEmailCodeIsExists !== VCode) {
+      throw new NewHttpException('验证码错误');
     }
   }
 }

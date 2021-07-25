@@ -6,6 +6,8 @@ import {
   Param,
   Post,
   Query,
+  Req,
+  Request,
 } from '@nestjs/common';
 import { ArticleService } from './article.service';
 import { ArticleClassifyEntity } from '@src/entitys/article-classify.entity';
@@ -18,6 +20,8 @@ import { ArticleEntity } from '@src/entitys/article.entity';
 import { GetTopicArticleListDto } from '@src/module/article/v1/dto/get-topic-article-list.dto';
 import { GetClassifyListDto } from '@src/module/article/v1/dto/get-classify-list.dto';
 import { TopicEntity } from '@src/entitys/topic.entity';
+import { CurrentUserId } from '@src/common/decorator/current-userId.decorator';
+import { LikeDto } from '@src/module/article/v1/dto/like.dto';
 
 @ApiTags('文章模块')
 @Controller('api/v1/article')
@@ -31,21 +35,33 @@ export class ArticleController {
   }
 
   @ApiOperation({
-    summary: '通过文章分类id获取文章列表',
+    summary:
+      '通过文章分类id获取文章列表 如果登录了就可以获取到 个人是否喜欢某条文章的数据',
   })
+  @ApiBearerAuth()
   @Get('classify/list')
   public async getArticleListOfClassify(
     @Query() { classifyId, pageNum }: GetClassifyListDto,
+    @CurrentUserId() userId: number | null,
   ): Promise<ArticleEntity[]> {
-    return this.articleService.getArticleListOfClassify(+classifyId, +pageNum);
+    return this.articleService.getArticleListOfClassify(
+      +classifyId,
+      +pageNum,
+      userId,
+    );
   }
 
-  @ApiOperation({ summary: '通过话题id获取文章列表' })
+  @ApiOperation({
+    summary:
+      '通过话题id获取文章列表 如果登录了就可以获取到 个人是否喜欢某条文章的数据',
+  })
+  @ApiBearerAuth()
   @Get('topic/list')
   public async getTopicList(
     @Query() { pageNum, topicId }: GetTopicArticleListDto,
+    @CurrentUserId() userId: number | null,
   ): Promise<TopicEntity[]> {
-    return await this.articleService.getTopicList(+topicId, +pageNum);
+    return await this.articleService.getTopicList(+topicId, +pageNum, userId);
   }
 
   @ApiOperation({
@@ -74,34 +90,56 @@ export class ArticleController {
   }
 
   @ApiOperation({ summary: '获取指定的文章详情' })
+  @ApiBearerAuth()
   @Get('detail/:id')
   public async getArticleDetail(
     @Param('id') id: string,
+    @CurrentUserId() userId: number | null,
   ): Promise<ArticleEntity> {
-    return this.articleService.getArticleDetail(+id);
+    return this.articleService.getArticleDetail(+id, userId);
   }
 
   @ApiOperation({ summary: '获取指定用户的文章列表' })
+  @ApiBearerAuth()
   @Get('other/user/list')
   public async getUserArticle(
     @Query('id') id: string,
     @Query('pageNum') pageNum: string,
-  ) {
-    return this.articleService.getOtherUserArticle(+id, +pageNum);
+    @CurrentUserId() userId: number | null,
+  ): Promise<ArticleEntity[]> {
+    return this.articleService.getOtherUserArticle(+id, +pageNum, userId);
   }
 
   @ApiOperation({
-    summary: '通过文章id删除文章',
-    description: '只能删除自己的',
+    summary: '通过文章id删除文章 必须登录 只能删除自己的',
   })
   @ApiBearerAuth()
-  @Delete('/delete/:id')
+  @Delete('delete/:id')
   @Auth()
   public async deleteArticle(
     @Param('id') id: string,
     @CurrentUser() user: UsersEntity,
   ): Promise<void> {
     await this.articleService.removeArticle(+id, user);
+  }
+
+  @ApiOperation({
+    summary: '点赞或取消点赞文章接口 需要登录',
+    description:
+      '点赞还是点踩 0踩 1赞 如果当前是已经点赞状态 再次请求携带type为1 请求本接口那么会取消点赞, 点踩同理',
+  })
+  @ApiBearerAuth()
+  @Post('like')
+  @Auth()
+  public async likeArticle(
+    @Body() likeDto: LikeDto,
+    @CurrentUser() user: UsersEntity,
+  ): Promise<string> {
+    return await this.articleService.likeArticle(
+      likeDto.articleId,
+      user,
+      likeDto.type,
+    );
   }
 
   @ApiOperation({ summary: '搜索文章' })

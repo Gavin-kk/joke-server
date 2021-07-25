@@ -1,6 +1,5 @@
-import { Body, Controller, Get, Post, Put, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, Put, Query } from '@nestjs/common';
 import { UserService } from './user.service';
-import { FastifyReply } from 'fastify';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UsersEntity } from '@src/entitys/users.entity';
 import { Auth } from '@src/common/decorator/auth.decorator';
@@ -15,7 +14,7 @@ export class UserController {
 
   @ApiOperation({
     summary: '修改密码',
-    description: '使用本接口需要先获取验证码',
+    description: '使用本接口需要先获取验证码 需要token',
   })
   @ApiBearerAuth()
   @Put('edit/password')
@@ -28,8 +27,8 @@ export class UserController {
   }
 
   @ApiOperation({
-    summary: '修改邮箱',
-    description: '使用本接口需要先获取验证码',
+    summary: '修改邮箱 已登录',
+    description: '使用本接口需要先获取验证码 需要token',
   })
   @ApiBearerAuth()
   @Put('edit/email')
@@ -38,7 +37,7 @@ export class UserController {
     @Body() editEmailDto: EditEmailDto,
     @CurrentUser() user: UsersEntity,
   ): Promise<void> {
-    return this.userService.editEmail(editEmailDto, user);
+    await this.userService.editEmail(editEmailDto, user);
   }
 
   @ApiOperation({ summary: '搜索用户' })

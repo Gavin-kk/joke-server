@@ -52,7 +52,7 @@ export class EmailService {
     }
     try {
       // 发送验证码
-      await this.sendEmail(email, code);
+      await this.sendEmail(email, code, type);
     } catch (err) {
       this.logger.error(err, '发送验证码错误');
       throw new NewHttpException('发送失败');
@@ -64,11 +64,22 @@ export class EmailService {
     if (isExists) throw new NewHttpException('操作频繁', 400);
   }
 
-  private async sendEmail(email: string, code: number) {
+  private async sendEmail(email: string, code: number, type: SendEmailType) {
+    const subject = (): string => {
+      switch (type) {
+        case SendEmailType.Login:
+          return '用户登录验证';
+        case SendEmailType.EditPassword:
+          return '用户修改密码验证';
+        case SendEmailType.EditEmail:
+          return '用户修改邮箱验证';
+        default:
+      }
+    };
     const sendMailOptions: ISendMailOptions = {
       to: email,
       from: this.emailHost,
-      subject: '用户登录验证',
+      subject: subject(),
       template: join(__dirname, '../template/email/code.ejs'), //这里写你的模板名称，如果你的模板名称的单名如 validate.ejs ,直接写validate即可 系统会自动追加模板的后缀名,如果是多个，那就最好写全。
       context: {
         code, //验证码
