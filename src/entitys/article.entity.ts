@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  AfterLoad,
 } from 'typeorm';
 import { UsersEntity } from './users.entity';
 import { ArticleClassifyEntity } from './article-classify.entity';
@@ -73,21 +74,21 @@ export class ArticleEntity {
   })
   type: ArticleType;
 
-  @Column('int', {
-    name: 'like-count',
-    nullable: true,
-    comment: '点赞数量',
-    default: () => '0',
-  })
-  likeCount: number | null;
-
-  @Column('int', {
-    name: 'dislike',
-    nullable: true,
-    comment: '点踩数量',
-    default: () => '0',
-  })
-  dislike: number | null;
+  // @Column('int', {
+  //   name: 'like-count',
+  //   nullable: true,
+  //   comment: '点赞数量',
+  //   default: () => '0',
+  // })
+  // likeCount: number | null;
+  //
+  // @Column('int', {
+  //   name: 'dislike',
+  //   nullable: true,
+  //   comment: '点踩数量',
+  //   default: () => '0',
+  // })
+  // dislike: number | null;
 
   @Column('int', {
     name: 'share-count',

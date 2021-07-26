@@ -65,7 +65,7 @@ export class TopicEntity {
 
   @ManyToMany(() => ArticleEntity, (Articles) => Articles.topics)
   @JoinTable({
-    name: 'topic_articles_article',
+    name: 'topic_article',
     joinColumns: [{ name: 'topicId', referencedColumnName: 'id' }],
     inverseJoinColumns: [{ name: 'articleId', referencedColumnName: 'id' }],
     schema: 'joke',

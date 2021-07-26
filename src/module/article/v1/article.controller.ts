@@ -134,7 +134,8 @@ export class ArticleController {
   public async likeArticle(
     @Body() likeDto: LikeDto,
     @CurrentUser() user: UsersEntity,
-  ): Promise<string> {
+    // ): Promise<string> {
+  ) {
     return await this.articleService.likeArticle(
       likeDto.articleId,
       user,

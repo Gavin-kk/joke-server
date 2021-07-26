@@ -10,6 +10,7 @@ import { UserModule } from './module/user/v1/user.module';
 import { ArticleModule } from './module/article/v1/article.module';
 import { TopicModule } from './module/topic/v1/topic.module';
 import { UploadModule } from './module/upload/v1/upload.module';
+import { CommentModule } from './module/comment/comment.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { UploadModule } from './module/upload/v1/upload.module';
     ArticleModule,
     TopicModule,
     UploadModule,
+    CommentModule,
   ],
   controllers: [],
   providers: [],
