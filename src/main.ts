@@ -12,7 +12,7 @@ import { UPLOAD_IMAGE_SIZE_LIMIT } from '@src/common/constant/upload.constant';
 
 dotenv.config();
 
-const logger = new Logger('main.ts');
+const logger = new Logger('main');
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());

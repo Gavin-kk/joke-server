@@ -1,6 +1,14 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Index,
+} from 'typeorm';
 import { UsersEntity } from './users.entity';
-
+@Index('user_id', ['userId'])
 @Entity('userinfo', { schema: 'joke' })
 export class UserinfoEntity {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
@@ -28,7 +36,7 @@ export class UserinfoEntity {
   })
   job: string | null;
 
-  @Column('bigint', { name: 'birthday', nullable: true })
+  @Column('bigint', { name: 'birthday', nullable: true, comment: '生日' })
   birthday: string | null;
 
   @Column('varchar', {
@@ -39,6 +47,19 @@ export class UserinfoEntity {
   })
   hometown: string | null;
 
-  @OneToMany(() => UsersEntity, (users) => users.userinfo)
-  users: UsersEntity[];
+  /* @OneToMany(() => UsersEntity, (users) => users.userinfo)
+  users: UsersEntity[];*/
+
+  @Column('int', {
+    name: 'user_id',
+    comment: '用户的id',
+  })
+  userId: number;
+
+  @ManyToOne(() => UsersEntity, (user) => user.userinfo, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
+  user: UsersEntity;
 }

@@ -1,4 +1,12 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Timestamp,
+  UpdateDateColumn,
+} from 'typeorm';
 import { TopicEntity } from './topic.entity';
 
 @Entity('topic-classify', { schema: 'joke' })
@@ -17,20 +25,11 @@ export class TopicClassifyEntity {
   })
   status: number | null;
 
-  @Column('timestamp', {
-    name: 'createAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createAt: Date | null;
+  @CreateDateColumn()
+  createAt: Timestamp;
 
-  @Column('timestamp', {
-    name: 'updateAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
-  updateAt: Date | null;
+  @UpdateDateColumn()
+  updateAt: Timestamp;
 
   @OneToMany(() => TopicEntity, (TopicEntity) => TopicEntity.topicClassify)
   topics: TopicEntity[];

@@ -37,9 +37,6 @@ export class UploadService {
   }
 
   private async handleFiles(files: AsyncIterableIterator<MultipartFile>): Promise<IUploadResponse> {
-    // const a = new EventEmitter();
-
-    // 是否上传成功
     const pipeline = promisify(stream.pipeline);
     // 访问上传文件的 url
     const uploadFileUrl: string[] = [];

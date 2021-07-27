@@ -6,6 +6,9 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Timestamp,
 } from 'typeorm';
 import { UserBindEntity } from './user-bind.entity';
 import { UserinfoEntity } from './userinfo.entity';
@@ -18,7 +21,7 @@ import { UserArticleLikeEntity } from './user-article-like.entity';
 @Index('IDX_fe0bb3f6520ee0469504521e71', ['username'], { unique: true })
 @Index('IDX_97672ac88f789774dd47f7c8be', ['email'], { unique: true })
 @Index('IDX_a000cca60bcf04454e72769949', ['phone'], { unique: true })
-@Index('userinfo_id-user_id', ['userinfoId'], {})
+// @Index('userinfo_id-user_id', ['userinfoId'], {})
 @Entity('users', { schema: 'joke' })
 export class UsersEntity {
   @PrimaryGeneratedColumn({ type: 'int', name: 'id', comment: '用户id' })
@@ -45,20 +48,11 @@ export class UsersEntity {
   })
   email: string | null;
 
-  @Column('timestamp', {
-    name: 'createAt',
-    nullable: true,
-    comment: '创建时间',
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createAt: Date | null;
+  @CreateDateColumn()
+  createAt: Timestamp;
 
-  @Column('timestamp', {
-    name: 'updateAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  updateAt: Date | null;
+  @UpdateDateColumn()
+  updateAt: Timestamp;
 
   @Column('int', {
     name: 'status',
@@ -85,13 +79,6 @@ export class UsersEntity {
   })
   nickname: string | null;
 
-  @Column('int', {
-    name: 'userinfo_id',
-    nullable: true,
-    comment: '用户详情的id',
-  })
-  userinfoId: number | null;
-
   @Exclude()
   @Column('varchar', {
     name: 'password',
@@ -117,16 +104,9 @@ export class UsersEntity {
   @OneToMany(() => UserBindEntity, (userBind) => userBind.user)
   userBinds: UserBindEntity[];
 
-  @ManyToOne(() => UserinfoEntity, (userinfo) => userinfo.users, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
-  })
-  @JoinColumn([{ name: 'userinfo_id', referencedColumnName: 'id' }])
-  userinfo: UserinfoEntity;
+  @OneToMany(() => UserinfoEntity, (usersinfo) => usersinfo.user)
+  userinfo: UsersEntity[];
 
-  @OneToMany(
-    () => UserArticleLikeEntity,
-    (userArticlesLike) => userArticlesLike.user,
-  )
+  @OneToMany(() => UserArticleLikeEntity, (userArticlesLike) => userArticlesLike.user)
   userArticlesLikes: UserArticleLikeEntity[];
 }

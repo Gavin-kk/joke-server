@@ -1,11 +1,14 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Timestamp,
+  UpdateDateColumn,
 } from 'typeorm';
 import { ArticleEntity } from './article.entity';
 import { UsersEntity } from './users.entity';
@@ -31,19 +34,11 @@ export class CommentEntity {
   @Column('int', { name: 'user_id', comment: '用户的id' })
   userId: number;
 
-  @Column('timestamp', {
-    name: 'createAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createAt: Date | null;
+  @CreateDateColumn()
+  createAt: Timestamp;
 
-  @Column('timestamp', {
-    name: 'updateAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  updateAt: Date | null;
+  @UpdateDateColumn()
+  updateAt: Timestamp;
 
   @Column('int', { name: 'article_id', comment: '被评论的动态id' })
   articleId: number;

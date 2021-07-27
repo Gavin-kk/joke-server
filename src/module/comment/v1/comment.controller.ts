@@ -6,7 +6,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '@src/common/decorator/current-user.decorator';
 import { UsersEntity } from '@src/entitys/users.entity';
 import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
-import { checkId } from '@src/module/comment/v1/comment.schema';
+import { checkId } from '@src/module/comment/v1/dto/comment.schema';
 
 @ApiTags('文章评论模块')
 @Controller('api/v1/comment')

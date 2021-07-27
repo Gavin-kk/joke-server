@@ -8,6 +8,9 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   AfterLoad,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Timestamp,
 } from 'typeorm';
 import { UsersEntity } from './users.entity';
 import { ArticleClassifyEntity } from './article-classify.entity';
@@ -131,19 +134,11 @@ export class ArticleEntity {
   })
   status: number | null;
 
-  @Column('timestamp', {
-    name: 'createAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createAt: Date | null;
+  @CreateDateColumn()
+  createAt: Timestamp;
 
-  @Column('timestamp', {
-    name: 'updateAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  updateAt: Date | null;
+  @UpdateDateColumn()
+  updateAt: Timestamp;
 
   @ManyToOne(() => UsersEntity, (users) => users.articles, {
     onDelete: 'NO ACTION',

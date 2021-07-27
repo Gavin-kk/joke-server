@@ -1,5 +1,6 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -8,6 +9,8 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Timestamp,
+  UpdateDateColumn,
 } from 'typeorm';
 import { TopicClassifyEntity } from './topic-classify.entity';
 import { ArticleEntity } from '@src/entitys/article.entity';
@@ -38,28 +41,16 @@ export class TopicEntity {
   })
   status: number | null;
 
-  @Column('timestamp', {
-    name: 'createAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createAt: Date | null;
+  @CreateDateColumn()
+  createAt: Timestamp;
 
-  @Column('timestamp', {
-    name: 'updateAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  updateAt: Date | null;
+  @UpdateDateColumn()
+  updateAt: Timestamp;
 
-  @ManyToOne(
-    () => TopicClassifyEntity,
-    (TopicClassifyEntity) => TopicClassifyEntity.topics,
-    {
-      onDelete: 'NO ACTION',
-      onUpdate: 'NO ACTION',
-    },
-  )
+  @ManyToOne(() => TopicClassifyEntity, (TopicClassifyEntity) => TopicClassifyEntity.topics, {
+    onDelete: 'NO ACTION',
+    onUpdate: 'NO ACTION',
+  })
   @JoinColumn([{ name: 'topic-classify_id', referencedColumnName: 'id' }])
   topicClassify: TopicClassifyEntity;
 

@@ -31,6 +31,8 @@ export class AuthService {
     private readonly userRepository: Repository<UsersEntity>,
     @InjectRepository(UserBindEntity)
     private readonly userBindRepository: Repository<UserBindEntity>,
+    @InjectRepository(UserinfoEntity)
+    private readonly userInfoRepository: Repository<UserinfoEntity>,
     private readonly redisService: RedisServiceN,
     private readonly jwtService: JwtService,
     private readonly connection: Connection,
@@ -42,9 +44,11 @@ export class AuthService {
     await this.checkVCode(emailLoginDto.email, emailLoginDto.VCode);
     // 如果用户存在 那么返回用户 如果用户不存在则创建用户
     // 判断用户是否存在
-    const user: UsersEntity | undefined = await this.userRepository.findOne({
-      email: emailLoginDto.email,
-    });
+    const user: UsersEntity | undefined = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.userinfo', 'userinfo')
+      .where({ email: emailLoginDto.email })
+      .getOne();
 
     if (user) {
       // 检查用户是否黑名单
@@ -58,7 +62,7 @@ export class AuthService {
 
       try {
         // 创建新用户
-        await this.userRepository
+        const userInsert = await this.userRepository
           .createQueryBuilder()
           .insert()
           .into(UsersEntity)
@@ -68,10 +72,16 @@ export class AuthService {
             password: emailLoginDto.password,
           })
           .execute();
-        // 返回 查询用户
-        return this.userRepository.findOne({
-          email: emailLoginDto.email,
+        //生成用户详情表
+        await this.userInfoRepository.save({
+          userId: userInsert.identifiers[0].id,
         });
+        // 返回 查询用户
+        return this.userRepository
+          .createQueryBuilder('user')
+          .leftJoinAndSelect('user.userinfo', 'userinfo')
+          .where({ email: emailLoginDto.email })
+          .getOne();
       } catch (err) {
         this.logger.error(err, '注册用户失败 AuthService');
         throw new NewHttpException('注册用户失败', 400);
@@ -90,11 +100,10 @@ export class AuthService {
     nickname,
   }: OtherLoginDto): Promise<IAuthServiceOtherLoginError | UsersEntity> {
     // 先验证是否存在该第三方登录的数据
-    const isExists: UserBindEntity | undefined =
-      await this.userBindRepository.findOne({
-        openid,
-        type,
-      });
+    const isExists: UserBindEntity | undefined = await this.userBindRepository.findOne({
+      openid,
+      type,
+    });
     // 如果不存在 则在表中记录该用户第三方登录数据 然后抛出异常让前端处理跳转到绑定邮箱密码页面
     if (!isExists) {
       const result: InsertResult = await this.userBindRepository
@@ -134,21 +143,21 @@ export class AuthService {
     // 验证验证码是否正确
     await this.checkVCode(email, VCode);
     // 首先验证该邮箱或者说用户是否已经存在了
-    const isBind: UsersEntity | undefined = await this.userRepository.findOne({
+    const emailIsBind: UsersEntity | undefined = await this.userRepository.findOne({
       email,
     });
 
-    if (isBind) {
+    if (emailIsBind) {
       // 检查用户被封
-      this.checkIfTheUserIsBlacklisted(isBind);
+      this.checkIfTheUserIsBlacklisted(emailIsBind);
       //  要绑定的邮箱存在 和当前用户直接绑定 无视密码
       await this.userBindRepository
         .createQueryBuilder()
         .update()
-        .set({ userId: isBind.id })
+        .set({ userId: emailIsBind.id })
         .where('id = :userBindId', { userBindId })
         .execute();
-      return isBind;
+      return emailIsBind;
     } else {
       //  生成用户 和 绑定userBindid 生成userinfo数据
       // 开启数据库事务
@@ -166,7 +175,7 @@ export class AuthService {
         await queryRunner.manager
           .createQueryBuilder(UserinfoEntity, 'userinfo')
           .insert()
-          .values({ age: 18, emotion: '保密', job: '保密' }) // 只是没有信息
+          .values({ userId: user.identifiers[0].id }) // 只是没有信息
           .execute();
         // 和以创建的绑定信息绑定邮箱
         await queryRunner.manager

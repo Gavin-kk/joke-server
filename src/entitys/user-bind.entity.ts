@@ -1,10 +1,13 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Timestamp,
+  UpdateDateColumn,
 } from 'typeorm';
 import { UsersEntity } from './users.entity';
 
@@ -35,19 +38,11 @@ export class UserBindEntity {
   @Column('text', { name: 'avatar', nullable: true, comment: '第三方头像' })
   avatar: string | null;
 
-  @Column('timestamp', {
-    name: 'createAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createAt: Date | null;
+  @CreateDateColumn()
+  createAt: Timestamp;
 
-  @Column('timestamp', {
-    name: 'updateAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  updateAt: Date | null;
+  @UpdateDateColumn()
+  updateAt: Timestamp;
 
   @Column('int', {
     name: 'user_id',

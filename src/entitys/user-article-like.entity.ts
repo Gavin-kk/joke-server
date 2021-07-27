@@ -1,10 +1,12 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { UsersEntity } from './users.entity';
 import { ArticleEntity } from './article.entity';
@@ -33,19 +35,10 @@ export class UserArticleLikeEntity {
   @Column('int', { name: 'article_id', comment: '给哪个文章点赞或踩' })
   articleId: number;
 
-  @Column('timestamp', {
-    name: 'createAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-  })
+  @CreateDateColumn()
   createAt: Date | null;
 
-  @Column('timestamp', {
-    name: 'updateAt',
-    nullable: true,
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn()
   updateAt: Date | null;
 
   @ManyToOne(() => UsersEntity, (users) => users.userArticlesLikes, {
