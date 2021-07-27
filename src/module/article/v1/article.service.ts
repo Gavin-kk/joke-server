@@ -1,12 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ArticleClassifyEntity } from '@src/entitys/article-classify.entity';
-import {
-  Connection,
-  QueryRunner,
-  Repository,
-  SelectQueryBuilder,
-} from 'typeorm';
+import { Connection, QueryRunner, Repository, SelectQueryBuilder } from 'typeorm';
 import { NewHttpException } from '@src/common/exception/customize.exception';
 import { ArticleEntity, ArticleType } from '@src/entitys/article.entity';
 import { PublishDto } from '@src/module/article/v1/dto/publish.dto';
@@ -14,10 +9,7 @@ import { isNumber } from 'class-validator';
 import { UsersEntity } from '@src/entitys/users.entity';
 import { TopicEntity } from '@src/entitys/topic.entity';
 import { TopicArticlesEntity } from '@src/entitys/topic_article.entity';
-import {
-  LikeType,
-  UserArticleLikeEntity,
-} from '@src/entitys/user-article-like.entity';
+import { LikeType, UserArticleLikeEntity } from '@src/entitys/user-article-like.entity';
 
 export interface CreateArticle {
   title: string;
@@ -63,10 +55,7 @@ export class ArticleService {
 
   public async getAllList(): Promise<ArticleClassifyEntity[]> {
     try {
-      return this.articleClassifyRepository
-        .createQueryBuilder()
-        .select()
-        .getMany();
+      return this.articleClassifyRepository.createQueryBuilder().select().getMany();
     } catch (err) {
       this.logger.error(err, '查询文章分类失败');
       throw new NewHttpException('查询文章分类失败', 400);
@@ -74,16 +63,7 @@ export class ArticleService {
   }
 
   public async createArticle(
-    {
-      type,
-      ACId,
-      shareId,
-      contentImg,
-      content,
-      address,
-      isTopic,
-      topicId,
-    }: PublishDto,
+    { type, ACId, shareId, contentImg, content, address, isTopic, topicId }: PublishDto,
     user: UsersEntity,
   ): Promise<void> {
     if (!isNumber(type) || isNaN(type) || (!isTopic && !ACId))
@@ -191,24 +171,13 @@ export class ArticleService {
         query.leftJoinAndSelect(
           'art.userArticlesLikes',
           'userArticlesLikes',
-          'userArticlesLikes.user_id = :userId and userArticlesLikes.is_like = 1',
+          'userArticlesLikes.user_id = :userId',
           { userId },
         );
       }
 
       return query
-        .loadRelationCountAndMap(
-          'art.likeCount',
-          'art.userArticlesLikes',
-          'like',
-          (qb) => qb.where('like.isLike = 1'),
-        )
-        .loadRelationCountAndMap(
-          'art.disLikeCount',
-          'art.userArticlesLikes',
-          'dislike',
-          (qb) => qb.where('dislike.isLike = 0'),
-        )
+
         .where('art.article-classify_id = :id', { id })
         .andWhere('art.privacy-status = 0')
         .offset((pageNumber - 1) * this.pageSize)
@@ -220,36 +189,31 @@ export class ArticleService {
     }
   }
 
-  public async getArticleDetail(
-    articleId: number,
-    userId: number | null,
-  ): Promise<ArticleEntity> {
+  public async getArticleDetail(articleId: number, userId: number | null): Promise<ArticleEntity> {
     this.checkIsNaN(articleId);
 
-    const query = this.articleRepository
+    const query: SelectQueryBuilder<ArticleEntity> = this.articleRepository
       .createQueryBuilder('art')
       .leftJoinAndSelect('art.user', 'users')
       .leftJoinAndSelect('users.userinfo', 'userinfo')
       .leftJoinAndSelect('art.comments', 'comment')
+      .leftJoinAndSelect('comment.target', 'target')
+      .leftJoinAndSelect('target.user', 'tUser')
       .leftJoinAndSelect('comment.user', 'u')
-      .loadRelationCountAndMap(
-        'art.likeCount',
-        'art.userArticlesLikes',
-        'like',
-        (qb) => qb.where('like.isLike = 1'),
+      .leftJoinAndSelect('art.share', 'share')
+      .loadRelationCountAndMap('art.commentCount', 'art.comments')
+      .loadRelationCountAndMap('art.likeCount', 'art.userArticlesLikes', 'like', (qb) =>
+        qb.where('like.isLike = 1'),
       )
-      .loadRelationCountAndMap(
-        'art.disLikeCount',
-        'art.userArticlesLikes',
-        'dislike',
-        (qb) => qb.where('dislike.isLike = 0'),
+      .loadRelationCountAndMap('art.disLikeCount', 'art.userArticlesLikes', 'dislike', (qb) =>
+        qb.where('dislike.isLike = 0'),
       );
 
     if (userId) {
       query.leftJoinAndSelect(
         'art.userArticlesLikes',
         'userArticlesLikes',
-        'userArticlesLikes.user_id = :userId and userArticlesLikes.is_like = 1',
+        'userArticlesLikes.user_id = :userId',
         { userId },
       );
     }
@@ -270,25 +234,19 @@ export class ArticleService {
       .leftJoinAndSelect('art.user', 'user')
       .leftJoinAndSelect('art.share', 'share')
       .leftJoinAndSelect('user.userinfo', 'userinfo')
-      .loadRelationCountAndMap('art.comment-count', 'art.comments')
-      .loadRelationCountAndMap(
-        'art.likeCount',
-        'art.userArticlesLikes',
-        'like',
-        (qb) => qb.where('like.isLike = 1'),
+      .loadRelationCountAndMap('art.commentCount', 'art.comments')
+      .loadRelationCountAndMap('art.likeCount', 'art.userArticlesLikes', 'like', (qb) =>
+        qb.where('like.isLike = 1'),
       )
-      .loadRelationCountAndMap(
-        'art.disLikeCount',
-        'art.userArticlesLikes',
-        'dislike',
-        (qb) => qb.where('dislike.isLike = 0'),
+      .loadRelationCountAndMap('art.disLikeCount', 'art.userArticlesLikes', 'dislike', (qb) =>
+        qb.where('dislike.isLike = 0'),
       );
     if (userId) {
       // 如果登录了 就连接点赞表 看是否点赞了
       query.leftJoinAndSelect(
         'art.userArticlesLikes',
         'userArticlesLikes',
-        'userArticlesLikes.user_id = :userId and userArticlesLikes.is_like = 1',
+        'userArticlesLikes.user_id = :userId',
         { userId },
       );
     }
@@ -306,35 +264,18 @@ export class ArticleService {
   ): Promise<ArticleEntity[]> {
     this.checkIsNaN(pageNumber);
     const pageNum: number = (pageNumber - 1) * this.pageSize;
-
-    const articles: ArticleEntity[] = await this.articleRepository
-      .createQueryBuilder('art')
-      .select()
+    return await this.articleList()
       .leftJoinAndSelect(
         'art.userArticlesLikes',
         'userArticlesLikes',
-        'userArticlesLikes.user_id = :userId and userArticlesLikes.is_like = 1',
+        'userArticlesLikes.user_id = :userId',
         { userId: user.id },
-      )
-      .loadRelationCountAndMap(
-        'art.likeCount',
-        'art.userArticlesLikes',
-        'like',
-        (qb) => qb.where('like.isLike = 1'),
-      )
-      .loadRelationCountAndMap(
-        'art.disLikeCount',
-        'art.userArticlesLikes',
-        'dislike',
-        (qb) => qb.where('dislike.isLike = 0'),
       )
       .where('art.user_id = :id', { id: user.id })
       .orderBy('art.id', 'DESC')
       .limit(this.pageSize)
       .offset(pageNum)
       .getMany();
-    // articles.sort((a, b) => a.likeCount - b.likeCount);
-    return articles;
   }
 
   // 获取指定用户的文章列表
@@ -350,7 +291,9 @@ export class ArticleService {
         'art.userArticlesLikes',
         'userArticlesLikes',
         'userArticlesLikes.user_id = :userId',
-        { userId },
+        {
+          userId,
+        },
       );
     }
 
@@ -366,40 +309,34 @@ export class ArticleService {
   public async searchArticles(content: string): Promise<ArticleEntity> {
     if (!content) throw new NewHttpException('参数错误');
 
-    return this.articleRepository
-      .createQueryBuilder('art')
-      .select()
+    return this.articleList()
       .where('art.title like :name', { name: `%${content}%` })
       .andWhere('art.privacy-status = 0')
       .getOne();
   }
 
   // 点赞或点踩文章
-  public async likeArticle(
-    articleId: number,
-    user: UsersEntity,
-    type: LikeType,
-    // ): Promise<string> {
-  ) {
+  public async likeArticle(articleId: number, user: UsersEntity, type: LikeType): Promise<string> {
     if (articleId === 0) throw new NewHttpException('参数错误');
     const queryRunner: QueryRunner = this.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction('SERIALIZABLE');
     // 查询是否存在点赞或点踩
-    const ifExists: UserArticleLikeEntity | undefined =
-      await queryRunner.manager.findOne(UserArticleLikeEntity, {
+    const ifExists: UserArticleLikeEntity | undefined = await queryRunner.manager.findOne(
+      UserArticleLikeEntity,
+      {
         where: {
           userId: user.id,
           articleId,
         },
         lock: { mode: 'pessimistic_read' },
-      });
-
-    const article: ArticleEntity = await queryRunner.manager.findOne(
-      ArticleEntity,
-      articleId,
-      { lock: { mode: 'pessimistic_read' } },
+      },
     );
+
+    const article: ArticleEntity = await queryRunner.manager.findOne(ArticleEntity, articleId, {
+      lock: { mode: 'pessimistic_read' },
+    });
+
     if (!article) throw new NewHttpException('文章不存在');
 
     try {
@@ -457,7 +394,13 @@ export class ArticleService {
       .leftJoinAndSelect('art.user', 'user')
       .leftJoinAndSelect('art.share', 'share')
       .leftJoinAndSelect('user.userinfo', 'userinfo')
-      .loadRelationCountAndMap('art.comment-count', 'art.comments');
+      .loadRelationCountAndMap('art.commentCount', 'art.comments')
+      .loadRelationCountAndMap('art.likeCount', 'art.userArticlesLikes', 'like', (qb) =>
+        qb.where('like.isLike = 1'),
+      )
+      .loadRelationCountAndMap('art.disLikeCount', 'art.userArticlesLikes', 'dislike', (qb) =>
+        qb.where('dislike.isLike = 0'),
+      );
   }
 
   private checkIsNaN(...num: number[]) {

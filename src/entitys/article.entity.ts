@@ -152,11 +152,10 @@ export class ArticleEntity {
   @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
   user: UsersEntity;
 
-  @ManyToOne(
-    () => ArticleClassifyEntity,
-    (articleClassify) => articleClassify.articles,
-    { onDelete: 'NO ACTION', onUpdate: 'NO ACTION' },
-  )
+  @ManyToOne(() => ArticleClassifyEntity, (articleClassify) => articleClassify.articles, {
+    onDelete: 'NO ACTION',
+    onUpdate: 'NO ACTION',
+  })
   @JoinColumn([{ name: 'article-classify_id', referencedColumnName: 'id' }])
   articleClassify: ArticleClassifyEntity;
 
@@ -176,9 +175,6 @@ export class ArticleEntity {
   @ManyToMany(() => TopicEntity, (TopicEntity) => TopicEntity.articles)
   topics: TopicEntity[];
 
-  @OneToMany(
-    () => UserArticleLikeEntity,
-    (userArticlesLike) => userArticlesLike.article,
-  )
+  @OneToMany(() => UserArticleLikeEntity, (userArticlesLike) => userArticlesLike.article)
   userArticlesLikes: UserArticleLikeEntity[];
 }

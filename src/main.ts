@@ -5,24 +5,21 @@ import * as dotenv from 'dotenv-flow';
 import multipart from 'fastify-multipart';
 import { Log4jsLogger } from '@nestx-log4js/core';
 import * as path from 'path';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptor/transform.interceptor';
+import { UPLOAD_IMAGE_SIZE_LIMIT } from '@src/common/constant/upload.constant';
 
 dotenv.config();
 
 const logger = new Logger('main.ts');
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule,
-    new FastifyAdapter(),
-  );
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+
   // 注册文件上传中间件
-  app.register(multipart);
+  await app.register(multipart, { throwFileSizeLimit: false });
+  // await app.register(multipart);
 
   const config = new DocumentBuilder()
     .setTitle('嘻嘻哈哈移动端api接口文档')

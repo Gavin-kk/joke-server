@@ -8,6 +8,7 @@ import {
   Query,
   Req,
   Request,
+  UsePipes,
 } from '@nestjs/common';
 import { ArticleService } from './article.service';
 import { ArticleClassifyEntity } from '@src/entitys/article-classify.entity';
@@ -35,8 +36,7 @@ export class ArticleController {
   }
 
   @ApiOperation({
-    summary:
-      '通过文章分类id获取文章列表 如果登录了就可以获取到 个人是否喜欢某条文章的数据',
+    summary: '通过文章分类id获取文章列表 如果登录了就可以获取到 个人是否喜欢某条文章的数据',
   })
   @ApiBearerAuth()
   @Get('classify/list')
@@ -44,16 +44,11 @@ export class ArticleController {
     @Query() { classifyId, pageNum }: GetClassifyListDto,
     @CurrentUserId() userId: number | null,
   ): Promise<ArticleEntity[]> {
-    return this.articleService.getArticleListOfClassify(
-      +classifyId,
-      +pageNum,
-      userId,
-    );
+    return this.articleService.getArticleListOfClassify(+classifyId, +pageNum, userId);
   }
 
   @ApiOperation({
-    summary:
-      '通过话题id获取文章列表 如果登录了就可以获取到 个人是否喜欢某条文章的数据',
+    summary: '通过话题id获取文章列表 如果登录了就可以获取到 个人是否喜欢某条文章的数据',
   })
   @ApiBearerAuth()
   @Get('topic/list')
@@ -136,18 +131,12 @@ export class ArticleController {
     @CurrentUser() user: UsersEntity,
     // ): Promise<string> {
   ) {
-    return await this.articleService.likeArticle(
-      likeDto.articleId,
-      user,
-      likeDto.type,
-    );
+    return await this.articleService.likeArticle(likeDto.articleId, user, likeDto.type);
   }
 
   @ApiOperation({ summary: '搜索文章' })
   @Get('search')
-  public async searchArticles(
-    @Query('content') content: string,
-  ): Promise<ArticleEntity> {
+  public async searchArticles(@Query('content') content: string): Promise<ArticleEntity> {
     return this.articleService.searchArticles(content);
   }
 }
