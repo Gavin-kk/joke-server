@@ -17,6 +17,8 @@ import { Exclude } from 'class-transformer';
 import { UserArticleLikeEntity } from './user-article-like.entity';
 import { BlackListEntity } from './black-list.entity';
 import { FollowEntity } from './follow.entity';
+import { FeedbackEntity } from './feedback.entity';
+import { RolesEntity } from './roles.entity';
 
 @Index('IDX_fe0bb3f6520ee0469504521e71', ['username'], { unique: true })
 @Index('IDX_97672ac88f789774dd47f7c8be', ['email'], { unique: true })
@@ -121,4 +123,10 @@ export class UsersEntity {
 
   @OneToMany(() => FollowEntity, (follow) => follow.follow)
   followed: FollowEntity[];
+
+  @OneToMany(() => FeedbackEntity, (feedback) => feedback.user)
+  feedbacks: FeedbackEntity[];
+
+  @OneToMany(() => RolesEntity, (roles) => roles.user)
+  roles: RolesEntity[];
 }

@@ -177,7 +177,6 @@ export class ArticleService {
       }
 
       return query
-
         .where('art.article-classify_id = :id', { id })
         .andWhere('art.privacy-status = 0')
         .offset((pageNumber - 1) * this.pageSize)
