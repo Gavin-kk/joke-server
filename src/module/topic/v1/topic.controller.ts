@@ -18,8 +18,7 @@ export class TopicController {
 
   @ApiOperation({
     summary: '根据话题分类id获取话题分类下的话题列表',
-    description:
-      '动态路由 第一个参数是父分类的id 第二个是话题列表的分页参数pageNum',
+    description: '动态路由 第一个参数是父分类的id 第二个是话题列表的分页参数pageNum',
   })
   @Get('classify/:classifyId/:pageNum')
   public async getTopicList(
@@ -41,9 +40,7 @@ export class TopicController {
 
   @ApiOperation({ summary: '搜索话题' })
   @Get('search')
-  public async searchTopic(
-    @Query('content') content: string,
-  ): Promise<TopicEntity> {
+  public async searchTopic(@Query('content') content: string): Promise<TopicEntity> {
     return this.topicService.searchTopic(content);
   }
 }

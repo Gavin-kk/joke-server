@@ -11,6 +11,7 @@ import { ArticleModule } from './module/article/v1/article.module';
 import { TopicModule } from './module/topic/v1/topic.module';
 import { UploadModule } from './module/upload/v1/upload.module';
 import { CommentModule } from './module/comment/v1/comment.module';
+import { FollowModule } from './module/follow/follow.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { CommentModule } from './module/comment/v1/comment.module';
     TopicModule,
     UploadModule,
     CommentModule,
+    FollowModule,
   ],
   controllers: [],
   providers: [],

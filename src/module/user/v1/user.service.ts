@@ -1,21 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersEntity } from '@src/entitys/users.entity';
-import { Repository } from 'typeorm';
+import { Repository, Connection, QueryRunner } from 'typeorm';
 import { NewHttpException } from '@src/common/exception/customize.exception';
 import { EditPasswordDto } from '@src/module/user/v1/dto/edit-password.dto';
 import { RedisServiceN } from '@src/lib/redis/redis.service';
 import {
   REDIS_EDIT_EMAIL_KEY_METHOD,
   REDIS_EDIT_PASSWORD_KEY_METHOD,
-  REDIS_EMAIL_KEY_METHOD,
 } from '@src/common/constant/email.constant';
-import { hashSync } from 'bcryptjs';
 import { TOKEN_REDIS_KEY_METHOD } from '@src/common/constant/auth.constant';
 import { EditEmailDto } from '@src/module/user/v1/dto/edit-email.dto';
 import { EditUserinfoDto } from '@src/module/user/v1/dto/edit-userinfo.dto';
 import { UserinfoEntity } from '@src/entitys/userinfo.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { BlockUserDto } from '@src/module/user/v1/dto/block-user.dto';
+import { BlackListEntity } from '@src/entitys/black-list.entity';
 
 @Injectable()
 export class UserService {
@@ -25,8 +24,43 @@ export class UserService {
     private readonly usersRepository: Repository<UsersEntity>,
     @InjectRepository(UserinfoEntity)
     private readonly userinfoRepository: Repository<UserinfoEntity>,
+    @InjectRepository(BlackListEntity)
+    private readonly blackListRepository: Repository<BlackListEntity>,
     private readonly redisService: RedisServiceN,
+    private readonly connection: Connection,
   ) {}
+  // 拉黑用户
+  public async blockUsers({ blackUserId }: BlockUserDto, currentUserId: number): Promise<string> {
+    if (blackUserId === currentUserId) throw new NewHttpException('不能拉黑自己');
+    const queryRunner: QueryRunner = await this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction('REPEATABLE READ');
+    try {
+      // 查看用户是否已被拉黑 如果已被拉黑则解除拉黑 如果未被拉黑则拉黑
+      const isBlack: BlackListEntity | undefined = await queryRunner.manager.findOne(
+        BlackListEntity,
+        {
+          userId: currentUserId,
+          blackUserId,
+        },
+      );
+      if (typeof isBlack === 'undefined') {
+        await queryRunner.manager.save(BlackListEntity, { userId: currentUserId, blackUserId });
+        await queryRunner.commitTransaction();
+        return '拉黑成功';
+      } else {
+        await queryRunner.manager.delete(BlackListEntity, { userId: currentUserId, blackUserId });
+        await queryRunner.commitTransaction();
+        return '解除拉黑成功';
+      }
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(err, '拉黑或解除拉黑失败');
+      throw new NewHttpException('拉黑或解除拉黑失败');
+    } finally {
+      await queryRunner.release();
+    }
+  }
 
   public async searchUser(content: string): Promise<UsersEntity | null> {
     if (!content) throw new NewHttpException('参数错误');

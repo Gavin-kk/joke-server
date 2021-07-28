@@ -2,13 +2,7 @@
 // import { PasswordLogin } from './passwrod-login.dto';  extends PartialType(PasswordLogin)
 
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsNumber,
-  IsString,
-  Length,
-} from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class EmailLoginDto {
   @ApiProperty({ description: '邮箱' })

@@ -1,18 +1,20 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNumber } from 'class-validator';
 
 export class EditUserinfoDto {
-  @ApiProperty({ description: '用户昵称' })
+  @ApiPropertyOptional({ description: '用户昵称' })
   nickname: string;
-  @ApiProperty({ description: '0男 1女 2保密' })
+  @ApiPropertyOptional({ description: '0男 1女 2保密' })
   gender: number;
-  @ApiProperty({ description: '家乡' })
+  @ApiPropertyOptional({ description: '家乡' })
   hometown: string;
-  @ApiProperty({ description: '生日' })
-  birthday: string;
-  @ApiProperty({ description: '工作类型' })
+  @ApiPropertyOptional({ description: '生日' })
+  @IsNumber({ allowNaN: false }, {})
+  birthday: number;
+  @ApiPropertyOptional({ description: '工作类型' })
   job: string;
-  @ApiProperty({ description: '情感' })
+  @ApiPropertyOptional({ description: '情感' })
   emotion: string;
-  @ApiProperty({ description: '年龄' })
+  @ApiPropertyOptional({ description: '年龄' })
   age: number;
 }
