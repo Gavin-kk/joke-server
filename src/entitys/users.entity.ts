@@ -19,6 +19,7 @@ import { BlackListEntity } from './black-list.entity';
 import { FollowEntity } from './follow.entity';
 import { FeedbackEntity } from './feedback.entity';
 import { RolesEntity } from './roles.entity';
+import { VisitorEntity } from './visitor.entity';
 
 @Index('IDX_fe0bb3f6520ee0469504521e71', ['username'], { unique: true })
 @Index('IDX_97672ac88f789774dd47f7c8be', ['email'], { unique: true })
@@ -97,6 +98,10 @@ export class UsersEntity {
   })
   password: string;
 
+  likeCount: number;
+  followCount: number;
+  fansCount: number;
+
   @OneToMany(() => ArticleEntity, (article) => article.user)
   articles: ArticleEntity[];
 
@@ -129,4 +134,10 @@ export class UsersEntity {
 
   @OneToMany(() => RolesEntity, (roles) => roles.user)
   roles: RolesEntity[];
+
+  @OneToMany(() => VisitorEntity, (visitor) => visitor.user)
+  visitors: VisitorEntity[];
+
+  @OneToMany(() => VisitorEntity, (visitor) => visitor.visitorUser)
+  interviewee: VisitorEntity[];
 }

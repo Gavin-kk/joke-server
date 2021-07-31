@@ -62,7 +62,7 @@ export class AuthService {
 
       try {
         // 创建新用户
-        const userInsert = await this.userRepository
+        const userInsert: InsertResult = await this.userRepository
           .createQueryBuilder()
           .insert()
           .into(UsersEntity)

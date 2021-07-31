@@ -1,12 +1,10 @@
 import { TypeOrmModuleAsyncOptions } from '@nestjs/typeorm';
 import { join } from 'path';
-import {
-  RedisModuleAsyncOptions,
-  RedisModuleOptions,
-} from 'nestjs-redis/dist/redis.interface';
-import { Redis } from 'ioredis';
+import { RedisModuleAsyncOptions, RedisModuleOptions } from 'nestjs-redis/dist/redis.interface';
 import { Logger } from '@nestjs/common';
+
 const logger: Logger = new Logger('databaseConfig');
+
 export const databaseConfig: TypeOrmModuleAsyncOptions = {
   useFactory: () => ({
     type: 'mysql',

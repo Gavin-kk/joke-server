@@ -21,7 +21,7 @@ export class FeedbackService {
     }
   }
 
-  public async getFeedbackList() {
+  public async getFeedbackList(): Promise<FeedbackEntity[]> {
     return this.feedbackRepository.find();
   }
 }

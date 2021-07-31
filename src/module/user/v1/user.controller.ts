@@ -16,11 +16,31 @@ import { EditEmailDto } from '@src/module/user/v1/dto/edit-email.dto';
 import { EditAvatarDto } from '@src/module/user/v1/dto/edit-avatar.dto';
 import { EditUserinfoDto } from '@src/module/user/v1/dto/edit-userinfo.dto';
 import { BlockUserDto } from '@src/module/user/v1/dto/block-user.dto';
+import { AddVisitorDto } from '@src/module/user/v1/dto/add-visitor.dto';
 
 @ApiTags('用户模块')
 @Controller('api/v1/user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @ApiOperation({ summary: '获取用户详情 携带访客信息' })
+  @ApiBearerAuth()
+  @Get('info')
+  @Auth()
+  public async getUserDetails(@CurrentUser() user: UsersEntity): Promise<UsersEntity> {
+    return this.userService.getUserDetail(user.id);
+  }
+
+  @ApiOperation({ summary: '添加访客' })
+  @ApiBearerAuth()
+  @Post('visitor')
+  @Auth()
+  public async addGuest(
+    @CurrentUser('id') userId: number,
+    @Body() { visitorUserId }: AddVisitorDto,
+  ): Promise<void> {
+    await this.userService.addVisitor(userId, visitorUserId);
+  }
 
   @ApiOperation({ summary: '拉黑用户或解除拉黑 需要登录 传入被拉黑人的id' })
   @ApiBearerAuth()
@@ -52,7 +72,7 @@ export class UserController {
     @Body() userinfoDto: EditUserinfoDto,
     @CurrentUser() user: UsersEntity,
   ): Promise<string> {
-    return this.userService.editUserInfo(userinfoDto, user.id);
+    return this.userService.editUserInfo(userinfoDto, user);
   }
 
   @ApiOperation({

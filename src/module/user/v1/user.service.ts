@@ -15,6 +15,11 @@ import { EditUserinfoDto } from '@src/module/user/v1/dto/edit-userinfo.dto';
 import { UserinfoEntity } from '@src/entitys/userinfo.entity';
 import { BlockUserDto } from '@src/module/user/v1/dto/block-user.dto';
 import { BlackListEntity } from '@src/entitys/black-list.entity';
+import { VisitorEntity } from '@src/entitys/visitor.entity';
+import { ArticleEntity } from '@src/entitys/article.entity';
+import { compareSync } from 'bcryptjs';
+import { promisify } from 'util';
+import { unlink } from 'fs';
 
 @Injectable()
 export class UserService {
@@ -26,9 +31,60 @@ export class UserService {
     private readonly userinfoRepository: Repository<UserinfoEntity>,
     @InjectRepository(BlackListEntity)
     private readonly blackListRepository: Repository<BlackListEntity>,
+    @InjectRepository(VisitorEntity)
+    private readonly visitorRepository: Repository<VisitorEntity>,
+    @InjectRepository(ArticleEntity)
+    private readonly articleRepository: Repository<ArticleEntity>,
     private readonly redisService: RedisServiceN,
     private readonly connection: Connection,
   ) {}
+  // 获取用户详情
+  public async getUserDetail(userId: number): Promise<UsersEntity> {
+    try {
+      const user: UsersEntity = await this.usersRepository
+        .createQueryBuilder('u')
+        .leftJoinAndSelect('u.userinfo', 'info')
+        // 查询访问我的有多少
+        .loadRelationCountAndMap('u.totalVisitors', 'u.interviewee')
+        // 查询今日访客
+        .loadRelationCountAndMap('u.todaySVisitor', 'u.interviewee', 'todaySVisitor', (qb) =>
+          qb.where('todaySVisitor.time > :today', {
+            today: new Date().getTime() - 1000 * 60 * 60 * 24,
+          }),
+        )
+        // .loadRelationCountAndMap('u.likeCount', 'userArticlesLike', 'a')
+        .where('u.id = :userId', { userId })
+        .getOne();
+      const like: { likeCount: string } = await this.articleRepository
+        .createQueryBuilder('art')
+        .leftJoin('art.userArticlesLikes', 'ulike', 'ulike.is_like = 1')
+        .select('count(ulike.is_like) likeCount')
+        .where('ulike.user_id = :userId', { userId })
+        .getRawOne();
+      user.likeCount = +like.likeCount;
+      // 我的粉丝
+      const fans: { fansCount: string } = await this.usersRepository
+        .createQueryBuilder('u')
+        .leftJoin('u.followed', 'fans')
+        .select('count(fans.follow_id) fansCount')
+        .where('u.id = :userId', { userId })
+        .getRawOne();
+      // 我的关注
+      const follow: { followCount: string } = await this.usersRepository
+        .createQueryBuilder('u')
+        .leftJoin('u.follows', 'followed')
+        .select('count(followed.user_id) followCount')
+        .where('u.id = :userId', { userId })
+        .getRawOne();
+      user.followCount = +follow.followCount;
+      user.fansCount = +fans.fansCount;
+      return user;
+    } catch (err) {
+      this.logger.error(err, '获取用户信息失败');
+      throw new NewHttpException('未知错误');
+    }
+  }
+
   // 拉黑用户
   public async blockUsers({ blackUserId }: BlockUserDto, currentUserId: number): Promise<string> {
     if (blackUserId === currentUserId) throw new NewHttpException('不能拉黑自己');
@@ -101,12 +157,17 @@ export class UserService {
   }
 
   // 修改邮箱
-  public async editEmail({ VCode, newEmail }: EditEmailDto, user: UsersEntity) {
+  public async editEmail({ VCode, newEmail, password }: EditEmailDto, user: UsersEntity) {
+    // 查询用户密码是否正确
+    if (!compareSync(password, user.password)) {
+      throw new NewHttpException('密码错误');
+    }
     // 检查验证码
     const VCodeIsExists: number | null = await this.redisService.get(
-      REDIS_EDIT_EMAIL_KEY_METHOD(user.email),
+      REDIS_EDIT_EMAIL_KEY_METHOD(newEmail),
     );
     if (VCodeIsExists === null || VCode !== VCodeIsExists) throw new NewHttpException('验证码错误');
+
     // 更新邮箱
     try {
       await this.usersRepository
@@ -119,7 +180,7 @@ export class UserService {
       await this.redisService.del(TOKEN_REDIS_KEY_METHOD(user.email));
     } catch (err) {
       this.logger.error(err, '更新邮箱出错');
-      throw new NewHttpException('更新失败');
+      throw new NewHttpException('更新失败 该邮箱可能已被绑定');
     }
   }
 
@@ -139,17 +200,30 @@ export class UserService {
   }
   // 修改用户信息
   public async editUserInfo(
-    { nickname, gender, hometown, birthday, job, emotion, age }: EditUserinfoDto,
-    userId: number,
+    { nickname, gender, hometown, birthday, job, emotion, age, avatar }: EditUserinfoDto,
+    user: UsersEntity,
   ): Promise<string> {
     try {
       // 修改用户昵称
-      if (nickname) {
-        await this.usersRepository.update({ id: userId }, { nickname });
+      if (nickname || avatar) {
+        await this.usersRepository.update(
+          { id: user.id },
+          { nickname: nickname || user.nickname, avatar: avatar || user.avatar },
+        );
+        // 如果用户要更改头像那么把以前的头像从服务器上删除掉
+        if (avatar) {
+          const unFile = promisify(unlink);
+          const fileName: string = avatar.replace(
+            `http://${process.env.APP_HOST}:${process.env.APP_PORT}/static/`,
+            '',
+          );
+          await unFile(fileName);
+        }
       }
+
       //  修改详情 userinfo表
       await this.userinfoRepository.update(
-        { userId },
+        { userId: user.id },
         {
           gender,
           hometown,
@@ -164,5 +238,10 @@ export class UserService {
       this.logger.error(err, '未知错误');
       throw new NewHttpException('未知错误');
     }
+  }
+  //添加访客记录
+  public async addVisitor(userId: number, visitorUserId: number): Promise<void> {
+    const currentTime: number = new Date().getTime();
+    await this.visitorRepository.save({ userId, visitorUserId, time: currentTime });
   }
 }

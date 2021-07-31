@@ -120,7 +120,8 @@ export class AuthController {
   }
 
   @ApiOperation({
-    summary: '第三方账号第一次登录时绑定邮箱 请求本接口需要先请求邮箱验证码 type 为 login',
+    summary: '初始化第三方登录 ',
+    description: '第三方账号第一次登录时绑定邮箱 请求本接口需要先请求邮箱验证码 type 为 login',
   })
   @Post('other/bind/email')
   async bindEmail(@Body() bindEmailDto: OtherBindEmailDto) {

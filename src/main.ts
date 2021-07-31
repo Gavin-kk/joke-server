@@ -1,4 +1,4 @@
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe, WebSocketAdapter } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as dotenv from 'dotenv-flow';
@@ -8,23 +8,24 @@ import * as path from 'path';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { TransformInterceptor } from './common/interceptor/transform.interceptor';
-import { UPLOAD_IMAGE_SIZE_LIMIT } from '@src/common/constant/upload.constant';
+import { WsAdapter } from '@nestjs/platform-ws';
 
 dotenv.config();
 
-const logger = new Logger('main');
+const logger: Logger = new Logger('main');
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
-
+  const app: NestFastifyApplication = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter(),
+  );
   // 注册文件上传中间件
-  await app.register(multipart, { throwFileSizeLimit: false });
-  // await app.register(multipart);
+  await app.register(multipart);
 
   const config = new DocumentBuilder()
     .setTitle('嘻嘻哈哈移动端api接口文档')
     // .setDescription('这是商城后台管理系统项目')
-    .setVersion('1.0')
+    .setVersion('1.0.0')
     // .addTag('我是一个标签')
     .addBearerAuth()
     .build();
@@ -38,6 +39,8 @@ async function bootstrap() {
     root: path.join(__dirname, './upload-file'),
     prefix: '/static',
   });
+  // 使用 ws 适配器
+  app.useWebSocketAdapter(new WsAdapter(app));
   // 启用日志框架
   app.useLogger(app.get(Log4jsLogger));
   // 使用全局管道 验证

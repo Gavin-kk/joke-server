@@ -36,8 +36,8 @@ export class UserinfoEntity {
   })
   job: string | null;
 
-  @Column('bigint', { name: 'birthday', nullable: true, comment: '生日' })
-  birthday: number | null;
+  @Column('varchar', { name: 'birthday', nullable: true, length: 50, comment: '生日' })
+  birthday: string | null;
 
   @Column('varchar', {
     name: 'hometown',
