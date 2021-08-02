@@ -10,6 +10,7 @@ import { UsersEntity } from '@src/entitys/users.entity';
 import { TopicEntity } from '@src/entitys/topic.entity';
 import { TopicArticlesEntity } from '@src/entitys/topic_article.entity';
 import { LikeType, UserArticleLikeEntity } from '@src/entitys/user-article-like.entity';
+import { CommentEntity } from '@src/entitys/comment.entity';
 
 export interface CreateArticle {
   title: string;
@@ -22,6 +23,13 @@ export interface CreateArticle {
   userId: number;
   address: string;
   isTopic: ClassifyType;
+}
+
+export interface ICount {
+  articleCount: number;
+  topicArticleCount: number;
+  commentCount: number;
+  likeCount: number;
 }
 
 export const enum ClassifyType {
@@ -50,6 +58,10 @@ export class ArticleService {
     private readonly topicArticlesRepository: Repository<TopicArticlesEntity>,
     @InjectRepository(UserArticleLikeEntity)
     private readonly userArticleLikeRepository: Repository<UserArticleLikeEntity>,
+    @InjectRepository(UsersEntity)
+    private readonly usersRepository: Repository<UsersEntity>,
+    @InjectRepository(CommentEntity)
+    private readonly commentRepository: Repository<CommentEntity>,
     private readonly connection: Connection,
   ) {}
 
@@ -384,6 +396,61 @@ export class ArticleService {
       // 释放数据库事务
       await queryRunner.release();
     }
+  }
+  //  获取个人所有的话题文章
+  public async getUserTopicArticleList(userId: number): Promise<ArticleEntity[]> {
+    return (
+      (await this.topicRepository
+        .createQueryBuilder('t')
+        .leftJoinAndSelect('t.articles', 'articles')
+        .where('articles.user_id = :userId', { userId })
+        .select('articles.*')
+        .getRawMany()) as ArticleEntity[]
+    ).map((item) => ({ ...item, 'content-imgs': JSON.parse(item['content-imgs']) }));
+  }
+
+  // 获取所有点赞的文章列表
+  public async getLikeArticleList(userId: number): Promise<UserArticleLikeEntity[]> {
+    return (
+      await this.usersRepository
+        .createQueryBuilder('u')
+        .leftJoinAndSelect('u.userArticlesLikes', 'likes', 'likes.is_like = 1')
+        .leftJoinAndSelect('likes.article', 'article')
+        .where('u.id = :userId', { userId })
+        .getOne()
+    ).userArticlesLikes;
+  }
+
+  public async getCount(userId): Promise<ICount> {
+    // 个人所有文章的数量
+    const articleCount: number = await this.articleRepository
+      .createQueryBuilder('a')
+      .where('a.user_id = :userId', { userId })
+      .getCount();
+    // 个人所有话题下的文章的数量
+    const { topicArticleCount }: { topicArticleCount: string } = await this.topicRepository
+      .createQueryBuilder('t')
+      .leftJoinAndSelect('t.articles', 'articles')
+      .where('articles.user_id = :userId', { userId })
+      .select('count(articles.id) topicArticleCount')
+      .getRawOne();
+    // 个人所有评论的数量
+    const commentCount: number = await this.commentRepository
+      .createQueryBuilder('c')
+      .where('c.user_id = :userId', { userId })
+      .getCount();
+    // 个人所有点赞的数量
+    const likeCount: number = await this.userArticleLikeRepository
+      .createQueryBuilder('l')
+      .where('l.user_id = :userId', { userId })
+      .andWhere('l.is_like = 1')
+      .getCount();
+    return {
+      articleCount,
+      topicArticleCount: +topicArticleCount,
+      commentCount,
+      likeCount,
+    };
   }
 
   private articleList() {

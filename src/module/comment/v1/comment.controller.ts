@@ -7,6 +7,7 @@ import { CurrentUser } from '@src/common/decorator/current-user.decorator';
 import { UsersEntity } from '@src/entitys/users.entity';
 import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
 import { checkId } from '@src/module/comment/v1/dto/comment.schema';
+import { CommentEntity } from '@src/entitys/comment.entity';
 
 @ApiTags('文章评论模块')
 @Controller('api/v1/comment')
@@ -40,5 +41,13 @@ export class CommentController {
     @CurrentUser() user: UsersEntity,
   ): Promise<string> {
     return this.commentService.removeComment(commentId, user.id);
+  }
+
+  @ApiOperation({ summary: '获取个人所有评论 携带文章的信息' })
+  @ApiBearerAuth()
+  @Get('user/list')
+  @Auth()
+  public async getUserCommentList(@CurrentUser() user: UsersEntity): Promise<CommentEntity[]> {
+    return this.commentService.getUserCommentList(user);
   }
 }

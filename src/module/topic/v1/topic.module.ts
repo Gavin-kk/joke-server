@@ -4,9 +4,10 @@ import { TopicController } from './topic.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TopicClassifyEntity } from '@src/entitys/topic-classify.entity';
 import { TopicEntity } from '@src/entitys/topic.entity';
+import { RedisModule } from '@src/lib/redis/redis.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TopicClassifyEntity, TopicEntity])],
+  imports: [TypeOrmModule.forFeature([TopicClassifyEntity, TopicEntity]), RedisModule],
   controllers: [TopicController],
   providers: [TopicService],
 })

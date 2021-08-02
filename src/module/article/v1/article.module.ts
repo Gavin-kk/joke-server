@@ -10,6 +10,8 @@ import { TopicEntity } from '@src/entitys/topic.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { CheckLoginWeakenedMiddleware } from '@src/common/middleware/check-login-weakened.middleware';
 import { UserArticleLikeEntity } from '@src/entitys/user-article-like.entity';
+import { UsersEntity } from '@src/entitys/users.entity';
+import { CommentEntity } from '@src/entitys/comment.entity';
 
 @Module({
   imports: [
@@ -18,7 +20,9 @@ import { UserArticleLikeEntity } from '@src/entitys/user-article-like.entity';
       ArticleEntity,
       TopicArticlesEntity,
       TopicEntity,
+      UsersEntity,
       UserArticleLikeEntity,
+      CommentEntity,
     ]),
     RedisModule,
     JwtModule.register({}),

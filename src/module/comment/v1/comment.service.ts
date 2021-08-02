@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { ArticleEntity } from '@src/entitys/article.entity';
 import { PostCommentDto } from '@src/module/comment/v1/dto/post-comment.dto';
 import { NewHttpException } from '@src/common/exception/customize.exception';
+import { UsersEntity } from '@src/entitys/users.entity';
 
 @Injectable()
 export class CommentService {
@@ -54,6 +55,19 @@ export class CommentService {
       return '删除成功';
     } catch (err) {
       this.logger.error(err, '删除评论出错');
+    }
+  }
+
+  public async getUserCommentList(user: UsersEntity): Promise<CommentEntity[]> {
+    try {
+      return this.commentRepository
+        .createQueryBuilder('c')
+        .leftJoinAndSelect('c.article', 'article')
+        .where('c.user_id = :userId', { userId: user.id })
+        .getMany();
+    } catch (err) {
+      this.logger.error(err, '获取个人评论列表出错');
+      throw new NewHttpException('请求错误');
     }
   }
 }

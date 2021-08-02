@@ -41,27 +41,6 @@ export class UserService {
   // 获取用户详情
   public async getUserDetail(userId: number): Promise<UsersEntity> {
     try {
-      const user: UsersEntity = await this.usersRepository
-        .createQueryBuilder('u')
-        .leftJoinAndSelect('u.userinfo', 'info')
-        // 查询访问我的有多少
-        .loadRelationCountAndMap('u.totalVisitors', 'u.interviewee')
-        // 查询今日访客
-        .loadRelationCountAndMap('u.todaySVisitor', 'u.interviewee', 'todaySVisitor', (qb) =>
-          qb.where('todaySVisitor.time > :today', {
-            today: new Date().getTime() - 1000 * 60 * 60 * 24,
-          }),
-        )
-        // .loadRelationCountAndMap('u.likeCount', 'userArticlesLike', 'a')
-        .where('u.id = :userId', { userId })
-        .getOne();
-      const like: { likeCount: string } = await this.articleRepository
-        .createQueryBuilder('art')
-        .leftJoin('art.userArticlesLikes', 'ulike', 'ulike.is_like = 1')
-        .select('count(ulike.is_like) likeCount')
-        .where('ulike.user_id = :userId', { userId })
-        .getRawOne();
-      user.likeCount = +like.likeCount;
       // 我的粉丝
       const fans: { fansCount: string } = await this.usersRepository
         .createQueryBuilder('u')
@@ -76,6 +55,28 @@ export class UserService {
         .select('count(followed.user_id) followCount')
         .where('u.id = :userId', { userId })
         .getRawOne();
+      // 给我点赞的数量
+      const like: { likeCount: string } = await this.articleRepository
+        .createQueryBuilder('art')
+        .leftJoin('art.userArticlesLikes', 'ulike', 'ulike.is_like = 1')
+        .select('count(ulike.is_like) likeCount')
+        .where('ulike.user_id = :userId', { userId })
+        .getRawOne();
+      const user: UsersEntity = await this.usersRepository
+        .createQueryBuilder('u')
+        .leftJoinAndSelect('u.userinfo', 'info')
+        // 查询访问我的有多少
+        .loadRelationCountAndMap('u.totalVisitors', 'u.interviewee')
+        // 查询今日访客
+        .loadRelationCountAndMap('u.todaySVisitor', 'u.interviewee', 'todaySVisitor', (qb) =>
+          qb.where('todaySVisitor.time > :today', {
+            today: new Date().getTime() - 1000 * 60 * 60 * 24,
+          }),
+        )
+        .where('u.id = :userId', { userId })
+        .getOne();
+
+      user.likeCount = +like.likeCount;
       user.followCount = +follow.followCount;
       user.fansCount = +fans.fansCount;
       return user;

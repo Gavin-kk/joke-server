@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
-import { ArticleService } from './article.service';
+import { ArticleService, ICount } from './article.service';
 import { ArticleClassifyEntity } from '@src/entitys/article-classify.entity';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PublishDto } from './dto/publish.dto';
@@ -12,6 +12,7 @@ import { GetClassifyListDto } from '@src/module/article/v1/dto/get-classify-list
 import { TopicEntity } from '@src/entitys/topic.entity';
 import { CurrentUserId } from '@src/common/decorator/current-userId.decorator';
 import { LikeDto } from '@src/module/article/v1/dto/like.dto';
+import { UserArticleLikeEntity } from '@src/entitys/user-article-like.entity';
 
 @ApiTags('文章模块')
 @Controller('api/v1/article')
@@ -73,6 +74,24 @@ export class ArticleController {
     return this.articleService.getCurrentUserArticle(user, +pageNumber);
   }
 
+  @ApiOperation({ summary: '获取当前用户的所有文章,话题文章,评论的文章,点赞的文章 的数量' })
+  @ApiBearerAuth()
+  @Get('user/count')
+  @Auth()
+  public async getCount(@CurrentUser('id') userId: number): Promise<ICount> {
+    return this.articleService.getCount(userId);
+  }
+
+  @ApiOperation({
+    summary: '获取当前用户所有话题文章',
+  })
+  @ApiBearerAuth()
+  @Get('user/topic/list')
+  @Auth()
+  public async getUserTopicArticleList(@CurrentUser('id') userId: number) {
+    return this.articleService.getUserTopicArticleList(userId);
+  }
+
   @ApiOperation({ summary: '获取指定的文章详情' })
   @ApiBearerAuth()
   @Get('detail/:id')
@@ -118,9 +137,20 @@ export class ArticleController {
   public async likeArticle(
     @Body() likeDto: LikeDto,
     @CurrentUser() user: UsersEntity,
-    // ): Promise<string> {
-  ) {
+  ): Promise<string> {
     return await this.articleService.likeArticle(likeDto.articleId, user, likeDto.type);
+  }
+
+  @ApiOperation({
+    summary: '获取个人所有点赞的文章',
+  })
+  @ApiBearerAuth()
+  @Get('user/like/list')
+  @Auth()
+  public async getLikeArticleList(
+    @CurrentUser('id') userId: number,
+  ): Promise<UserArticleLikeEntity[]> {
+    return await this.articleService.getLikeArticleList(userId);
   }
 
   @ApiOperation({ summary: '搜索文章' })
