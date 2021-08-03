@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Req } from '@nestjs/common';
+import { Controller, Post, Req } from '@nestjs/common';
 import { UploadService } from './upload.service';
 import { IFastifyRequest } from '@src/app';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UploadImagesDto } from '@src/module/upload/v1/dto/upload-images.dto';
 import { Auth } from '@src/common/decorator/auth.decorator';
+import { UploadVideoDto } from '@src/module/upload/v1/dto/upload-video.dto';
 
 @ApiTags('文件上传模块')
 @Controller('api/v1/upload')
@@ -25,5 +26,23 @@ export class UploadController {
     @Req() request: IFastifyRequest,
   ): Promise<{ success: string[]; notSupport: string[]; restricted: string[] }> {
     return this.uploadService.uploadImages(request);
+  }
+
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: '视频上传模块 需要登录',
+    description: '上传多个视频, 文件大小限制100M',
+  })
+  @ApiBody({
+    type: UploadVideoDto,
+  })
+  @ApiBearerAuth()
+  @Post('video')
+  @Auth()
+  public async uploadVideo(
+    @Req() request: IFastifyRequest,
+    // ): Promise<{ success: string[]; notSupport: string[]; restricted: string[] }> {
+  ) {
+    return this.uploadService.uploadVideo(request);
   }
 }
