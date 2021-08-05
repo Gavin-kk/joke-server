@@ -9,13 +9,14 @@ import { length } from 'class-validator';
 import { TOKEN_EXPIRED } from '@src/common/constant/auth.constant';
 import { JwtService } from '@nestjs/jwt';
 import { OtherLoginDto } from './dto/other-login.dto';
-import { UserBindEntity } from '../../../entitys/user-bind.entity';
+import { UserBindEntity } from '@src/entitys/user-bind.entity';
 import {
   REDIS_EMAIL_KEY_METHOD,
   REDIS_LOGIN_KEY_METHOD,
 } from '@src/common/constant/email.constant';
 import { OtherBindEmailDto } from '@src/module/auth/v1/dto/other-bind-email.dto';
 import { UserinfoEntity } from '@src/entitys/userinfo.entity';
+import * as moment from 'moment';
 
 export interface IAuthServiceOtherLoginError {
   text: string;
@@ -75,6 +76,12 @@ export class AuthService {
         //生成用户详情表
         await this.userInfoRepository.save({
           userId: userInsert.identifiers[0].id,
+          gender: 2,
+          age: 0,
+          emotion: '保密',
+          job: '保密',
+          birthday: moment().format('YYYY-MM-DD'),
+          hometown: '保密',
         });
         // 返回 查询用户
         return this.userRepository
@@ -175,7 +182,15 @@ export class AuthService {
         await queryRunner.manager
           .createQueryBuilder(UserinfoEntity, 'userinfo')
           .insert()
-          .values({ userId: user.identifiers[0].id }) // 只是没有信息
+          .values({
+            userId: user.identifiers[0].id,
+            gender: 2,
+            age: 0,
+            emotion: '保密',
+            job: '保密',
+            birthday: moment().format('YYYY-MM-DD'),
+            hometown: '保密',
+          }) // 只是没有信息
           .execute();
         // 和以创建的绑定信息绑定邮箱
         await queryRunner.manager

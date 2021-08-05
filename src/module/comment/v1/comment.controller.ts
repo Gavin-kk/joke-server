@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  UsePipes,
+} from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { PostCommentDto } from '@src/module/comment/v1/dto/post-comment.dto';
 import { Auth } from '@src/common/decorator/auth.decorator';
@@ -8,6 +17,7 @@ import { UsersEntity } from '@src/entitys/users.entity';
 import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
 import { checkId } from '@src/module/comment/v1/dto/comment.schema';
 import { CommentEntity } from '@src/entitys/comment.entity';
+import { GetArticleCommentListDto } from '@src/module/comment/v1/dto/get-article-comment-list.dto';
 
 @ApiTags('文章评论模块')
 @Controller('api/v1/comment')
@@ -16,7 +26,8 @@ export class CommentController {
 
   @ApiOperation({
     summary: '文章发布评论接口',
-    description: 'targetId:回复评论的id 为空或者不传 就是回复文章的一级评论 content: 评论的内容',
+    description:
+      'commentId:回复评论的一级评论id 为空或者不传 就是回复文章的一级评论 content: 评论的内容 targetId是回复评论的id 可以不传 如果不为空 需要传入一级评论的commentId 如果是回复一级评论或其下的评论 articleId 可以不传',
   })
   @ApiBearerAuth()
   @Post('publish')
@@ -26,6 +37,25 @@ export class CommentController {
     @CurrentUser() user: UsersEntity,
   ): Promise<string> {
     return this.commentService.postAcomment(postCommentDto, user.id);
+  }
+
+  @ApiOperation({
+    summary: '获取文章的一级评论下的所有评论',
+    description: 'commentId 一级评论的id 查询此id下的所有评论',
+  })
+  @Get('list')
+  public async getArticleCommentList(
+    @Query() { commentId }: GetArticleCommentListDto,
+  ) {
+    return this.commentService.getArticleCommentList(+commentId);
+  }
+
+  @ApiOperation({
+    summary: 'test comment',
+  })
+  @Get('test')
+  public async Test() {
+    return this.commentService.test();
   }
 
   @ApiOperation({
@@ -47,7 +77,9 @@ export class CommentController {
   @ApiBearerAuth()
   @Get('user/list')
   @Auth()
-  public async getUserCommentList(@CurrentUser() user: UsersEntity): Promise<CommentEntity[]> {
+  public async getUserCommentList(
+    @CurrentUser() user: UsersEntity,
+  ): Promise<CommentEntity[]> {
     return this.commentService.getUserCommentList(user);
   }
 }

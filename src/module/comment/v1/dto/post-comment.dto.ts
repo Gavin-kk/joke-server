@@ -1,9 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class PostCommentDto {
   @ApiProperty({ description: '评论的文章id' })
-  @IsNumber({}, { message: '参数错误' })
   articleId: number;
 
   @ApiProperty({
@@ -15,4 +14,9 @@ export class PostCommentDto {
   @ApiProperty({ description: '评论的内容' })
   @IsString({ message: '参数错误' })
   content: string;
+
+  @ApiProperty({
+    description: '一级评论id 如果是回复一级评论或回复一级评论的下评论 此项必填',
+  })
+  commentId: number;
 }

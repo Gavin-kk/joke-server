@@ -22,6 +22,12 @@ export const enum ArticleType {
   Graphic, // 图文
   PlainText, // 纯文
   Share, // 分享
+  Video,
+}
+export interface IVideo {
+  playCount: number;
+  videoUrl: string;
+  pic: string;
 }
 
 @Index('article-classify_id', ['articleClassifyId'], {})
@@ -56,6 +62,13 @@ export class ArticleEntity {
   })
   contentImg: string[] | null;
 
+  @Column('simple-json', {
+    name: 'video',
+    nullable: true,
+    comment: '文章视频数据',
+  })
+  video: IVideo | null;
+
   @Column('int', {
     name: 'privacy-status',
     nullable: true,
@@ -76,22 +89,6 @@ export class ArticleEntity {
     comment: '文章的类型 0 代表图文 1代表纯文字 2代表分享 ',
   })
   type: ArticleType;
-
-  // @Column('int', {
-  //   name: 'like-count',
-  //   nullable: true,
-  //   comment: '点赞数量',
-  //   default: () => '0',
-  // })
-  // likeCount: number | null;
-  //
-  // @Column('int', {
-  //   name: 'dislike',
-  //   nullable: true,
-  //   comment: '点踩数量',
-  //   default: () => '0',
-  // })
-  // dislike: number | null;
 
   @Column('int', {
     name: 'share-count',
@@ -147,10 +144,14 @@ export class ArticleEntity {
   @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
   user: UsersEntity;
 
-  @ManyToOne(() => ArticleClassifyEntity, (articleClassify) => articleClassify.articles, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
-  })
+  @ManyToOne(
+    () => ArticleClassifyEntity,
+    (articleClassify) => articleClassify.articles,
+    {
+      onDelete: 'NO ACTION',
+      onUpdate: 'NO ACTION',
+    },
+  )
   @JoinColumn([{ name: 'article-classify_id', referencedColumnName: 'id' }])
   articleClassify: ArticleClassifyEntity;
 
@@ -170,6 +171,9 @@ export class ArticleEntity {
   @ManyToMany(() => TopicEntity, (TopicEntity) => TopicEntity.articles)
   topics: TopicEntity[];
 
-  @OneToMany(() => UserArticleLikeEntity, (userArticlesLike) => userArticlesLike.article)
+  @OneToMany(
+    () => UserArticleLikeEntity,
+    (userArticlesLike) => userArticlesLike.article,
+  )
   userArticlesLikes: UserArticleLikeEntity[];
 }

@@ -1,13 +1,6 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  Index,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Index } from 'typeorm';
 import { UsersEntity } from './users.entity';
+
 @Index('user_id', ['userId'])
 @Entity('userinfo', { schema: 'joke' })
 export class UserinfoEntity {

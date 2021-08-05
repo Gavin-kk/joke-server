@@ -15,13 +15,14 @@ export class CheckLoginWeakenedMiddleware implements NestMiddleware {
     const authorization: string = req.headers.authorization;
     if (authorization) {
       const token: string = authorization.replace('Bearer ', '');
-      const { id }: { password: string; id: number } = this.jwtService.verify(
-        token,
-        {
+      try {
+        const { id }: { password: string; id: number } = this.jwtService.verify(token, {
           secret: process.env.JWT_SECRET,
-        },
-      );
-      req.userId = id;
+        });
+        if (id) {
+          req.userId = id;
+        }
+      } catch (err) {}
     } else {
       req.userId = null;
     }
