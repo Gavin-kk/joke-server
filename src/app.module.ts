@@ -15,6 +15,7 @@ import { FollowModule } from './module/follow/v1/follow.module';
 import { FeedbackModule } from './module/feedback/v1/feedback.module';
 import { UpdateModule } from './module/update/v1/update.module';
 import { ChatModule } from './module/chat/chat.module';
+import { GeographyModule } from './module/geography/geography.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ChatModule } from './module/chat/chat.module';
     FeedbackModule,
     UpdateModule,
     ChatModule,
+    GeographyModule,
   ],
   controllers: [],
   providers: [],

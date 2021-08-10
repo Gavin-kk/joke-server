@@ -19,10 +19,7 @@ export class TopicService {
 
   public async getAllClassify(): Promise<TopicClassifyEntity[]> {
     try {
-      return this.topicClassifyRepository
-        .createQueryBuilder('TopicClassifyEntity')
-        .select(['TopicClassifyEntity.id', 'TopicClassifyEntity.title'])
-        .getMany();
+      return this.topicClassifyRepository.createQueryBuilder().getMany();
     } catch (err) {
       this.logger.error(err, '获取分类列表失败');
       throw new NewHttpException('获取分类列表失败', 400);
@@ -65,11 +62,22 @@ export class TopicService {
     return this.topicRepository.createQueryBuilder().limit(10).getMany();
   }
   // 搜索话题
-  public async searchTopic(content: string) {
+  public async searchTopic(content = '', pageNum: number) {
     if (isEmpty(content)) throw new NewHttpException('参数错误');
     return this.topicRepository
       .createQueryBuilder('t')
       .where('t.title like :name', { name: `%${content}%` })
-      .getOne();
+      .offset(0)
+      .limit(pageNum * 10)
+      .getMany();
+  }
+
+  public async getAllTopic(pageNum: number) {
+    const pageSize = 10;
+    return this.topicRepository
+      .createQueryBuilder()
+      .offset(0)
+      .limit(pageNum * pageSize)
+      .getMany();
   }
 }

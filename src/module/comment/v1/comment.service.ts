@@ -69,7 +69,6 @@ export class CommentService {
         id: commentId,
         userId,
       });
-    console.log(userId);
     if (typeof comment === 'undefined') {
       throw new NewHttpException('评论不存在');
     }

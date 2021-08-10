@@ -19,6 +19,7 @@ import {
   UserArticleLikeEntity,
 } from '@src/entitys/user-article-like.entity';
 import { CommentEntity } from '@src/entitys/comment.entity';
+import { FollowEntity } from '@src/entitys/follow.entity';
 
 export interface CreateArticle {
   title: string;
@@ -30,7 +31,6 @@ export interface CreateArticle {
   articleClassifyId: number;
   userId: number;
   address: string;
-  isTopic: ClassifyType;
   videoUrl?: string;
   videoPic?: string;
 }
@@ -78,7 +78,8 @@ export class ArticleService {
   public async getAllList(): Promise<ArticleClassifyEntity[]> {
     try {
       return this.articleClassifyRepository
-        .createQueryBuilder()
+        .createQueryBuilder('a')
+        .loadRelationCountAndMap('a.count', 'a.articles')
         .select()
         .getMany();
     } catch (err) {
@@ -113,12 +114,11 @@ export class ArticleService {
       pic,
       type,
       content,
-      contentImg,
+      contentImg: contentImg || [],
       shareId: shareId || null,
       articleClassifyId: ACId || null,
       userId: user.id,
       address,
-      isTopic,
     };
 
     let createInfo: CreateArticle & ArticleEntity;
@@ -415,13 +415,36 @@ export class ArticleService {
   }
 
   // 搜索
-  public async searchArticles(content: string): Promise<ArticleEntity> {
-    if (!content) throw new NewHttpException('参数错误');
+  public async searchArticles(
+    content: string,
+    userId: number,
+    pageNum: number,
+  ): Promise<ArticleEntity[]> {
+    const query: SelectQueryBuilder<ArticleEntity> = this.articleList();
+    if (userId) {
+      query
+        .leftJoinAndSelect(
+          'art.userArticlesLikes',
+          'userArticlesLikes',
+          'userArticlesLikes.user_id = :userId',
+          { userId },
+        )
+        .leftJoinAndSelect(
+          'user.followed',
+          'followed',
+          'followed.user_id = :userId ',
+          {
+            userId,
+          },
+        );
+    }
 
-    return this.articleList()
-      .where('art.title like :name', { name: `%${content}%` })
+    return query
+      .offset((pageNum - 1) * this.pageSize)
+      .limit(this.pageSize)
+      .where('art.content like :name', { name: `%${content}%` })
       .andWhere('art.privacy-status = 0')
-      .getOne();
+      .getMany();
   }
 
   // 点赞或点踩文章
@@ -563,6 +586,35 @@ export class ArticleService {
       commentCount,
       likeCount,
     };
+  }
+
+  public async getAllArticlesFollowedByUser(
+    user: UsersEntity,
+    pageNum: number,
+  ): Promise<ArticleEntity[]> {
+    // 要查当前用户所有关注的用户的文章
+    const query = this.articleList();
+    return query
+      .leftJoinAndSelect(
+        'art.userArticlesLikes',
+        'userArticlesLikes',
+        'userArticlesLikes.user_id = :userId',
+        { userId: user.id },
+      )
+      .leftJoinAndSelect(
+        'user.followed',
+        'followed',
+        'followed.user_id = :userId ',
+        {
+          userId: user.id,
+        },
+      )
+      .orderBy('art.id', 'DESC')
+      .offset((pageNum - 1) * this.pageSize)
+      .limit(this.pageSize)
+      .where('art.user_id = followed.follow_id')
+      .andWhere('art.privacy-status = 0')
+      .getMany();
   }
 
   private articleList() {

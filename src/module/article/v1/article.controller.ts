@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ArticleService, ICount } from './article.service';
 import { ArticleClassifyEntity } from '@src/entitys/article-classify.entity';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -13,6 +21,9 @@ import { TopicEntity } from '@src/entitys/topic.entity';
 import { CurrentUserId } from '@src/common/decorator/current-userId.decorator';
 import { LikeDto } from '@src/module/article/v1/dto/like.dto';
 import { UserArticleLikeEntity } from '@src/entitys/user-article-like.entity';
+import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
+import * as joi from 'joi';
+const schema = joi.number().required();
 
 @ApiTags('文章模块')
 @Controller('api/v1/article')
@@ -26,7 +37,8 @@ export class ArticleController {
   }
 
   @ApiOperation({
-    summary: '通过文章分类id获取文章列表 如果登录了就可以获取到 个人是否喜欢某条文章的数据',
+    summary:
+      '通过文章分类id获取文章列表 如果登录了就可以获取到 个人是否喜欢某条文章的数据',
   })
   @ApiBearerAuth()
   @Get('classify/list')
@@ -34,11 +46,16 @@ export class ArticleController {
     @Query() { classifyId, pageNum }: GetClassifyListDto,
     @CurrentUserId() userId: number | null,
   ): Promise<ArticleEntity[]> {
-    return this.articleService.getArticleListOfClassify(+classifyId, +pageNum, userId);
+    return this.articleService.getArticleListOfClassify(
+      +classifyId,
+      +pageNum,
+      userId,
+    );
   }
 
   @ApiOperation({
-    summary: '通过话题id获取文章列表 如果登录了就可以获取到 个人是否喜欢某条文章的数据',
+    summary:
+      '通过话题id获取文章列表 如果登录了就可以获取到 个人是否喜欢某条文章的数据',
   })
   @ApiBearerAuth()
   @Get('topic/list')
@@ -74,7 +91,9 @@ export class ArticleController {
     return this.articleService.getCurrentUserArticle(user, +pageNumber);
   }
 
-  @ApiOperation({ summary: '获取当前用户的所有文章,话题文章,评论的文章,点赞的文章 的数量' })
+  @ApiOperation({
+    summary: '获取当前用户的所有文章,话题文章,评论的文章,点赞的文章 的数量',
+  })
   @ApiBearerAuth()
   @Get('user/count')
   @Auth()
@@ -138,7 +157,11 @@ export class ArticleController {
     @Body() likeDto: LikeDto,
     @CurrentUser() user: UsersEntity,
   ): Promise<string> {
-    return await this.articleService.likeArticle(likeDto.articleId, user, likeDto.type);
+    return await this.articleService.likeArticle(
+      likeDto.articleId,
+      user,
+      likeDto.type,
+    );
   }
 
   @ApiOperation({
@@ -154,8 +177,24 @@ export class ArticleController {
   }
 
   @ApiOperation({ summary: '搜索文章' })
+  @ApiBearerAuth()
   @Get('search')
-  public async searchArticles(@Query('content') content: string): Promise<ArticleEntity> {
-    return this.articleService.searchArticles(content);
+  public async searchArticles(
+    @Query('content') content: string,
+    @Query('pageNum', new LineCheckTransformPipe(schema)) pageNum: number,
+    @CurrentUserId() userId: number,
+  ): Promise<ArticleEntity[]> {
+    return this.articleService.searchArticles(content, userId, pageNum);
+  }
+
+  @ApiOperation({ summary: '获取个人关注所有用户的文章 需要登录' })
+  @ApiBearerAuth()
+  @Get('user/follow')
+  @Auth()
+  public async getAllArticlesFollowedByUser(
+    @Query('pageNum', new LineCheckTransformPipe(schema)) pageNum: number,
+    @CurrentUser() user: UsersEntity,
+  ): Promise<ArticleEntity[]> {
+    return this.articleService.getAllArticlesFollowedByUser(user, pageNum);
   }
 }

@@ -12,6 +12,7 @@ import {
   UPLOAD_VIDEO_SIZE_LIMIT,
 } from '@src/common/constant/upload.constant';
 import Ffmpeg = require('fluent-ffmpeg');
+import { unlink } from 'fs';
 
 interface IUploadResponse {
   success: string[];
@@ -27,8 +28,14 @@ export interface IUploadVideoSuccess {
 @Injectable()
 export class UploadService {
   private logger: Logger = new Logger('UploadService');
-  private uploadImagePath: string = path.join(__dirname, '../../../upload-file/image');
-  private uploadVideoPath: string = path.join(__dirname, '../../../upload-file/video');
+  private uploadImagePath: string = path.join(
+    __dirname,
+    '../../../upload-file/image',
+  );
+  private uploadVideoPath: string = path.join(
+    __dirname,
+    '../../../upload-file/video',
+  );
 
   public async uploadImages(req: IFastifyRequest): Promise<IUploadResponse> {
     if (!req.isMultipart()) {
@@ -90,7 +97,11 @@ export class UploadService {
         videoName,
         videoNewPath,
       );
-      const coverUrl: string = await this.processingVideoCover(videoNewPath, coverName, coverDir);
+      const coverUrl: string = await this.processingVideoCover(
+        videoNewPath,
+        coverName,
+        coverDir,
+      );
       success.push({ videoUrl, coverUrl });
     }
     return { success, fileNotSupported };
@@ -159,7 +170,10 @@ export class UploadService {
       // 文件名
       const fileName = `${uuid()}${path.extname(fileObj.filename)}`;
       // 文件路径和文件名
-      const filePathName: string = path.join(this.uploadImagePath, `./${fileName}`);
+      const filePathName: string = path.join(
+        this.uploadImagePath,
+        `./${fileName}`,
+      );
       // 静态资源访问的路径
       const url = `http://${process.env.APP_HOST}:${process.env.APP_PORT}/static/image/${fileName}`;
 
@@ -192,5 +206,14 @@ export class UploadService {
       notSupport: fileNotSupported,
       restricted: exceedTheLimit,
     };
+  }
+
+  async deleteVideo(videoName: string) {
+    const unlike = promisify(unlink);
+    await unlike(path.join(this.uploadVideoPath, videoName));
+  }
+  async deleteImage(imageName: string) {
+    const unlike = promisify(unlink);
+    await unlike(path.join(this.uploadImagePath, imageName));
   }
 }
