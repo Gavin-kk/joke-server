@@ -68,11 +68,16 @@ export class UserService {
         // 查询访问我的有多少
         .loadRelationCountAndMap('u.totalVisitors', 'u.interviewee')
         // 查询今日访客
-        .loadRelationCountAndMap('u.todaySVisitor', 'u.interviewee', 'todaySVisitor', (qb) =>
-          qb.where('todaySVisitor.time > :today', {
-            today: new Date().getTime() - 1000 * 60 * 60 * 24,
-          }),
+        .loadRelationCountAndMap(
+          'u.todaySVisitor',
+          'u.interviewee',
+          'todaySVisitor',
+          (qb) =>
+            qb.where('todaySVisitor.time > :today', {
+              today: new Date().getTime() - 1000 * 60 * 60 * 24,
+            }),
         )
+
         .where('u.id = :userId', { userId })
         .getOne();
 
@@ -87,26 +92,34 @@ export class UserService {
   }
 
   // 拉黑用户
-  public async blockUsers({ blackUserId }: BlockUserDto, currentUserId: number): Promise<string> {
-    if (blackUserId === currentUserId) throw new NewHttpException('不能拉黑自己');
+  public async blockUsers(
+    { blackUserId }: BlockUserDto,
+    currentUserId: number,
+  ): Promise<string> {
+    if (blackUserId === currentUserId)
+      throw new NewHttpException('不能拉黑自己');
     const queryRunner: QueryRunner = await this.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction('REPEATABLE READ');
     try {
       // 查看用户是否已被拉黑 如果已被拉黑则解除拉黑 如果未被拉黑则拉黑
-      const isBlack: BlackListEntity | undefined = await queryRunner.manager.findOne(
-        BlackListEntity,
-        {
+      const isBlack: BlackListEntity | undefined =
+        await queryRunner.manager.findOne(BlackListEntity, {
           userId: currentUserId,
           blackUserId,
-        },
-      );
+        });
       if (typeof isBlack === 'undefined') {
-        await queryRunner.manager.save(BlackListEntity, { userId: currentUserId, blackUserId });
+        await queryRunner.manager.save(BlackListEntity, {
+          userId: currentUserId,
+          blackUserId,
+        });
         await queryRunner.commitTransaction();
         return '拉黑成功';
       } else {
-        await queryRunner.manager.delete(BlackListEntity, { userId: currentUserId, blackUserId });
+        await queryRunner.manager.delete(BlackListEntity, {
+          userId: currentUserId,
+          blackUserId,
+        });
         await queryRunner.commitTransaction();
         return '解除拉黑成功';
       }
@@ -139,7 +152,8 @@ export class UserService {
     const VCodeIsExists: number | null = await this.redisService.get(
       REDIS_EDIT_PASSWORD_KEY_METHOD(user.email),
     );
-    if (VCodeIsExists === null || VCode !== VCodeIsExists) throw new NewHttpException('验证码错误');
+    if (VCodeIsExists === null || VCode !== VCodeIsExists)
+      throw new NewHttpException('验证码错误');
 
     try {
       // 更新密码
@@ -158,7 +172,10 @@ export class UserService {
   }
 
   // 修改邮箱
-  public async editEmail({ VCode, newEmail, password }: EditEmailDto, user: UsersEntity) {
+  public async editEmail(
+    { VCode, newEmail, password }: EditEmailDto,
+    user: UsersEntity,
+  ) {
     // 查询用户密码是否正确
     if (!compareSync(password, user.password)) {
       throw new NewHttpException('密码错误');
@@ -167,7 +184,8 @@ export class UserService {
     const VCodeIsExists: number | null = await this.redisService.get(
       REDIS_EDIT_EMAIL_KEY_METHOD(newEmail),
     );
-    if (VCodeIsExists === null || VCode !== VCodeIsExists) throw new NewHttpException('验证码错误');
+    if (VCodeIsExists === null || VCode !== VCodeIsExists)
+      throw new NewHttpException('验证码错误');
 
     // 更新邮箱
     try {
@@ -201,7 +219,16 @@ export class UserService {
   }
   // 修改用户信息
   public async editUserInfo(
-    { nickname, gender, hometown, birthday, job, emotion, age, avatar }: EditUserinfoDto,
+    {
+      nickname,
+      gender,
+      hometown,
+      birthday,
+      job,
+      emotion,
+      age,
+      avatar,
+    }: EditUserinfoDto,
     user: UsersEntity,
   ): Promise<string> {
     try {
@@ -209,7 +236,10 @@ export class UserService {
       if (nickname || avatar) {
         await this.usersRepository.update(
           { id: user.id },
-          { nickname: nickname || user.nickname, avatar: avatar || user.avatar },
+          {
+            nickname: nickname || user.nickname,
+            avatar: avatar || user.avatar,
+          },
         );
         // 如果用户要更改头像那么把以前的头像从服务器上删除掉
         if (avatar) {
@@ -241,8 +271,15 @@ export class UserService {
     }
   }
   //添加访客记录
-  public async addVisitor(userId: number, visitorUserId: number): Promise<void> {
+  public async addVisitor(
+    userId: number,
+    visitorUserId: number,
+  ): Promise<void> {
     const currentTime: number = new Date().getTime();
-    await this.visitorRepository.save({ userId, visitorUserId, time: currentTime });
+    await this.visitorRepository.save({
+      userId,
+      visitorUserId,
+      time: currentTime,
+    });
   }
 }

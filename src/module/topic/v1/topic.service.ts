@@ -5,6 +5,8 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 import { NewHttpException } from '@src/common/exception/customize.exception';
 import { TopicEntity } from '@src/entitys/topic.entity';
 import { isEmpty } from 'class-validator';
+import { CreateTopicDto } from '@src/module/topic/v1/dto/create-topic.dto';
+import * as Moment from 'moment';
 
 @Injectable()
 export class TopicService {
@@ -16,6 +18,20 @@ export class TopicService {
     @InjectRepository(TopicEntity)
     private readonly topicRepository: Repository<TopicEntity>,
   ) {}
+
+  public async createTopic({
+    title,
+    TCId,
+    imageUrl,
+    desc,
+  }: CreateTopicDto): Promise<void> {
+    await this.topicRepository.save({
+      title,
+      desc,
+      topicClassifyId: TCId,
+      pic: imageUrl,
+    });
+  }
 
   public async getAllClassify(): Promise<TopicClassifyEntity[]> {
     try {
@@ -34,24 +50,39 @@ export class TopicService {
     const pageSize = 10;
 
     try {
-      return this.topicClassifyRepository
-        .createQueryBuilder('t')
-        .select()
-        .leftJoinAndSelect('t.topics', 'topic')
-        .where((qb: SelectQueryBuilder<TopicClassifyEntity>): string => {
-          const subQuery: string = qb
-            .subQuery()
-            .createQueryBuilder()
-            .select(['topic.id'])
-            .from(TopicEntity, 'topic')
-            .orderBy('topic.id', 'ASC')
-            .offset((pageNum - 1) * pageSize)
-            .limit(1)
-            .getQuery();
-          return `topic.id >= (${subQuery})`;
-        })
-        .limit(pageSize)
-        .getOne();
+      return (
+        await this.topicClassifyRepository
+          .createQueryBuilder('t')
+          .select()
+          .leftJoinAndSelect('t.topics', 'topic')
+          .loadRelationCountAndMap('t.articleCount', 'topic.articles')
+          .loadRelationCountAndMap(
+            't.todayCount',
+            'topic.articles',
+            'todayCount',
+            (qb) =>
+              qb.where(
+                `to_days(todayCount.createAt) = to_days("${Moment().format(
+                  'YYYY-MM-DD',
+                )}")`,
+              ),
+          )
+          .where((qb: SelectQueryBuilder<TopicClassifyEntity>): string => {
+            const subQuery: string = qb
+              .subQuery()
+              .createQueryBuilder()
+              .select(['topic.id'])
+              .from(TopicEntity, 'topic')
+              .orderBy('topic.id', 'ASC')
+              .offset((pageNum - 1) * pageSize)
+              .limit(1)
+              .getQuery();
+            return `topic.id >= (${subQuery})`;
+          })
+          .andWhere('t.id = :id', { id })
+          .limit(pageSize)
+          .getOne()
+      ).topics;
     } catch (err) {
       this.logger.error(err, 'getTopicList出错');
       throw new NewHttpException('请求错误');
@@ -75,7 +106,19 @@ export class TopicService {
   public async getAllTopic(pageNum: number) {
     const pageSize = 10;
     return this.topicRepository
-      .createQueryBuilder()
+      .createQueryBuilder('topic')
+      .loadRelationCountAndMap('topic.articleCount', 'topic.articles')
+      .loadRelationCountAndMap(
+        'topic.todayCount',
+        'topic.articles',
+        'todayCount',
+        (qb) =>
+          qb.where(
+            `to_days(todayCount.createAt) = to_days("${Moment().format(
+              'YYYY-MM-DD',
+            )}")`,
+          ),
+      )
       .offset(0)
       .limit(pageNum * pageSize)
       .getMany();

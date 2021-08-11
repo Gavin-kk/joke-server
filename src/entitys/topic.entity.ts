@@ -47,10 +47,14 @@ export class TopicEntity {
   @UpdateDateColumn()
   updateAt: Timestamp;
 
-  @ManyToOne(() => TopicClassifyEntity, (TopicClassifyEntity) => TopicClassifyEntity.topics, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
-  })
+  @ManyToOne(
+    () => TopicClassifyEntity,
+    (TopicClassifyEntity) => TopicClassifyEntity.topics,
+    {
+      onDelete: 'NO ACTION',
+      onUpdate: 'NO ACTION',
+    },
+  )
   @JoinColumn([{ name: 'topic-classify_id', referencedColumnName: 'id' }])
   topicClassify: TopicClassifyEntity;
 
