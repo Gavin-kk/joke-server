@@ -19,7 +19,7 @@ import {
   UserArticleLikeEntity,
 } from '@src/entitys/user-article-like.entity';
 import { CommentEntity } from '@src/entitys/comment.entity';
-import { FollowEntity } from '@src/entitys/follow.entity';
+import { GetTopIcType } from '@src/module/article/v1/dto/get-topic-article-list.dto';
 
 export interface CreateArticle {
   title: string;
@@ -240,6 +240,7 @@ export class ArticleService {
       return query
         .where('art.article-classify_id = :id', { id })
         .andWhere('art.privacy-status = 0')
+        .orderBy('art.like_count_order', 'DESC')
         .offset((pageNumber - 1) * this.pageSize)
         .limit(this.pageSize)
         .getMany();
@@ -301,12 +302,13 @@ export class ArticleService {
     id: number,
     pageNumber: number,
     userId: number | null,
-  ): Promise<TopicEntity[]> {
+    type: GetTopIcType,
+    // ): Promise<ArticleEntity[]> {
+  ) {
     this.checkIsNaN(id, pageNumber);
     const pageNum: number = (pageNumber - 1) * this.pageSize;
     const query: SelectQueryBuilder<TopicEntity> = this.topicRepository
       .createQueryBuilder('a')
-      .select()
       .leftJoinAndSelect('a.articles', 'art')
       .leftJoinAndSelect('art.user', 'user')
       .leftJoinAndSelect('art.share', 'share')
@@ -342,12 +344,17 @@ export class ArticleService {
           },
         );
     }
-    return query
+    if (type === GetTopIcType.default) {
+      query.orderBy('art.like_count_order', 'DESC');
+    } else {
+      query.orderBy('art.createAt', 'DESC');
+    }
+    return await query
       .where('a.id = :id', { id })
       .andWhere('art.privacy-status = 0')
-      .limit(this.pageSize)
       .offset(pageNum)
-      .getMany();
+      .limit(this.pageSize)
+      .getOne();
   }
 
   public async getCurrentUserArticle(
@@ -456,7 +463,7 @@ export class ArticleService {
     if (articleId === 0) throw new NewHttpException('参数错误');
     const queryRunner: QueryRunner = this.connection.createQueryRunner();
     await queryRunner.connect();
-    await queryRunner.startTransaction('SERIALIZABLE');
+    await queryRunner.startTransaction('READ COMMITTED');
     // 查询是否存在点赞或点踩
     const ifExists: UserArticleLikeEntity | undefined =
       await queryRunner.manager.findOne(UserArticleLikeEntity, {
@@ -522,6 +529,19 @@ export class ArticleService {
     } finally {
       // 释放数据库事务
       await queryRunner.release();
+      try {
+        const articleLikeCount: number = await this.userArticleLikeRepository
+          .createQueryBuilder('u')
+          .where('u.is_like = 1')
+          .andWhere('u.article_id = :articleId', { articleId })
+          .getCount();
+        await this.articleRepository
+          .createQueryBuilder()
+          .update()
+          .set({ likeCountOrder: articleLikeCount })
+          .where('id = :articleId', { articleId })
+          .execute();
+      } catch (err) {}
     }
   }
   //  获取个人所有的话题文章

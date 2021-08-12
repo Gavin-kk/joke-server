@@ -55,6 +55,13 @@ export class ArticleEntity {
   })
   content: string;
 
+  @Column('int', {
+    name: 'like_count_order',
+    comment: '文章的点赞数',
+    default: 0,
+  })
+  likeCountOrder: number;
+
   @Column('simple-json', {
     name: 'content-imgs',
     nullable: true,

@@ -7,7 +7,6 @@ import {
   JoinTable,
   ManyToMany,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   Timestamp,
   UpdateDateColumn,
@@ -40,7 +39,7 @@ export class TopicEntity {
     default: () => "'0'",
   })
   status: number | null;
-
+  articleCount: number;
   @CreateDateColumn()
   createAt: Timestamp;
 

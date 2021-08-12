@@ -7,6 +7,8 @@ import { TopicEntity } from '@src/entitys/topic.entity';
 import { isEmpty } from 'class-validator';
 import { CreateTopicDto } from '@src/module/topic/v1/dto/create-topic.dto';
 import * as Moment from 'moment';
+import { TopicArticlesEntity } from '@src/entitys/topic_article.entity';
+import { ArticleEntity } from '@src/entitys/article.entity';
 
 @Injectable()
 export class TopicService {
@@ -89,8 +91,35 @@ export class TopicService {
     }
   }
 
-  public async getPopularList(): Promise<TopicEntity[]> {
-    return this.topicRepository.createQueryBuilder().limit(10).getMany();
+  public async getPopularList() {
+    const result = await this.topicRepository
+      .createQueryBuilder('t')
+      .leftJoin('t.articles', 'articles')
+      .loadRelationCountAndMap(
+        't.todayCount',
+        't.articles',
+        'todayCount',
+        (qb) =>
+          qb.where(
+            `to_days(todayCount.createAt) = to_days("${Moment().format(
+              'YYYY-MM-DD',
+            )}")`,
+          ),
+      )
+      .addSelect('count(articles.id)', 'articleCount')
+      .groupBy('t.id')
+      .orderBy('articleCount', 'DESC')
+      .limit(10)
+      .offset(0)
+      .getRawAndEntities();
+
+    const articleCountArr: number[] = result.raw.map(
+      (item) => +item.articleCount,
+    );
+    return result.entities.map((item, index) => ({
+      ...item,
+      articleCount: articleCountArr[index],
+    }));
   }
   // 搜索话题
   public async searchTopic(content = '', pageNum: number) {
@@ -122,5 +151,24 @@ export class TopicService {
       .offset(0)
       .limit(pageNum * pageSize)
       .getMany();
+  }
+
+  public async getTopicDetails(topicId: number): Promise<TopicEntity> {
+    return await this.topicRepository
+      .createQueryBuilder('topic')
+      .loadRelationCountAndMap('topic.articleCount', 'topic.articles')
+      .loadRelationCountAndMap(
+        'topic.todayCount',
+        'topic.articles',
+        'todayCount',
+        (qb) =>
+          qb.where(
+            `to_days(todayCount.createAt) = to_days("${Moment().format(
+              'YYYY-MM-DD',
+            )}")`,
+          ),
+      )
+      .where('topic.id = :topicId', { topicId })
+      .getOne();
   }
 }

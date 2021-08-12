@@ -56,7 +56,7 @@ export class TopicController {
       '获取热门话题 限制10条, 未写完 待动态模块写完之后 在这里算谁的动态最多最新 取10个优化!!!!!!!!!!!!!!!!!!',
   })
   @Get('popular/list')
-  public async getPopularList(): Promise<TopicEntity[]> {
+  public async getPopularList() {
     return this.topicService.getPopularList();
   }
 
@@ -75,5 +75,13 @@ export class TopicController {
     @Query('pageNum', new LineCheckTransformPipe(schema)) pageNum: number,
   ) {
     return this.topicService.getAllTopic(pageNum);
+  }
+
+  @ApiOperation({ summary: '获取话题详情' })
+  @Get('detail')
+  public async getTopicDetails(
+    @Query('topicId', new LineCheckTransformPipe(schema)) topicId: number,
+  ): Promise<TopicEntity> {
+    return this.topicService.getTopicDetails(topicId);
   }
 }

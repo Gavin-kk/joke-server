@@ -60,10 +60,16 @@ export class ArticleController {
   @ApiBearerAuth()
   @Get('topic/list')
   public async getTopicList(
-    @Query() { pageNum, topicId }: GetTopicArticleListDto,
+    @Query() { pageNum, topicId, type }: GetTopicArticleListDto,
     @CurrentUserId() userId: number | null,
-  ): Promise<TopicEntity[]> {
-    return await this.articleService.getTopicList(+topicId, +pageNum, userId);
+    // ): Promise<ArticleEntity[]> {
+  ) {
+    return await this.articleService.getTopicList(
+      +topicId,
+      +pageNum,
+      userId,
+      +type,
+    );
   }
 
   @ApiOperation({
