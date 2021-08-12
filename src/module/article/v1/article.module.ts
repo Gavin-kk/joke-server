@@ -7,7 +7,7 @@ import { ArticleEntity } from '@src/entitys/article.entity';
 import { RedisModule } from '@src/lib/redis/redis.module';
 import { TopicArticlesEntity } from '@src/entitys/topic_article.entity';
 import { TopicEntity } from '@src/entitys/topic.entity';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { CheckLoginWeakenedMiddleware } from '@src/common/middleware/check-login-weakened.middleware';
 import { UserArticleLikeEntity } from '@src/entitys/user-article-like.entity';
 import { UsersEntity } from '@src/entitys/users.entity';
@@ -25,7 +25,7 @@ import { CommentEntity } from '@src/entitys/comment.entity';
       CommentEntity,
     ]),
     RedisModule,
-    JwtModule.register({}),
+    JwtModule.register({ secret: process.env.JWT_SECRET }),
   ],
   controllers: [ArticleController],
   providers: [ArticleService],

@@ -8,7 +8,10 @@ import { UsersEntity } from '@src/entitys/users.entity';
 import { PasswordLogin } from './dto/passwrod-login.dto';
 import { OtherLoginDto } from './dto/other-login.dto';
 import { RedisServiceN } from 'src/lib/redis/redis.service';
-import { TOKEN_EXPIRED, TOKEN_REDIS_KEY_METHOD } from 'src/common/constant/auth.constant';
+import {
+  TOKEN_EXPIRED,
+  TOKEN_REDIS_KEY_METHOD,
+} from 'src/common/constant/auth.constant';
 import { NewHttpException } from 'src/common/exception/customize.exception';
 import { Auth } from '@src/common/decorator/auth.decorator';
 import { OtherBindEmailDto } from './dto/other-bind-email.dto';
@@ -37,10 +40,17 @@ export class AuthController {
     @CurrentUser() user: UsersEntity,
   ): Promise<{ user: UsersEntity; token: string }> {
     // 生成token
-    const token: string = this.authService.generateToken(user.id, user.password);
+    const token: string = this.authService.generateToken(
+      user.id,
+      user.password,
+    );
     try {
       // 把 token 写入缓存
-      await this.redisService.set(TOKEN_REDIS_KEY_METHOD(user.email), token, TOKEN_EXPIRED);
+      await this.redisService.set(
+        TOKEN_REDIS_KEY_METHOD(user.email),
+        token,
+        TOKEN_EXPIRED,
+      );
     } catch (err) {
       this.logger.log(err, '账号密码登录token写入缓存失败');
       throw new NewHttpException('登录失败', 400);
@@ -61,11 +71,18 @@ export class AuthController {
   ): Promise<{ user: UsersEntity; token: string }> {
     const user: UsersEntity = await this.authService.verifyLogin(emailLoginDto);
 
-    const token: string = this.authService.generateToken(user.id, user.password);
+    const token: string = this.authService.generateToken(
+      user.id,
+      user.password,
+    );
 
     try {
       // 把 token 写入缓存
-      await this.redisService.set(TOKEN_REDIS_KEY_METHOD(user.email), token, TOKEN_EXPIRED);
+      await this.redisService.set(
+        TOKEN_REDIS_KEY_METHOD(user.email),
+        token,
+        TOKEN_EXPIRED,
+      );
     } catch (err) {
       this.logger.log(err, 'email登录token写入缓存失败');
       throw new NewHttpException('登录失败', 400);
@@ -86,11 +103,12 @@ export class AuthController {
   @Post('other')
   public async otherLogin(
     @Body() otherLoginDto: OtherLoginDto,
-  ): Promise<IAuthServiceOtherLoginError | { user: UsersEntity; token: string }> {
+  ): Promise<
+    IAuthServiceOtherLoginError | { user: UsersEntity; token: string }
+  > {
     // 第三方账号需要绑定邮箱 一个邮箱可以绑定多个 第三方账号 但多第三方账号只能绑定一个邮箱
-    const result: IAuthServiceOtherLoginError | UsersEntity = await this.authService.otherLogin(
-      otherLoginDto,
-    );
+    const result: IAuthServiceOtherLoginError | UsersEntity =
+      await this.authService.otherLogin(otherLoginDto);
 
     if ((result as IAuthServiceOtherLoginError).text) {
       return result as IAuthServiceOtherLoginError;
@@ -121,15 +139,25 @@ export class AuthController {
 
   @ApiOperation({
     summary: '初始化第三方登录 ',
-    description: '第三方账号第一次登录时绑定邮箱 请求本接口需要先请求邮箱验证码 type 为 login',
+    description:
+      '第三方账号第一次登录时绑定邮箱 请求本接口需要先请求邮箱验证码 type 为 login',
   })
   @Post('other/bind/email')
   async bindEmail(@Body() bindEmailDto: OtherBindEmailDto) {
-    const user: UsersEntity = await this.authService.otherLoginBindEmail(bindEmailDto);
-    const token: string = this.authService.generateToken(user.id, user.password);
+    const user: UsersEntity = await this.authService.otherLoginBindEmail(
+      bindEmailDto,
+    );
+    const token: string = this.authService.generateToken(
+      user.id,
+      user.password,
+    );
     try {
       // 把 token 写入缓存
-      await this.redisService.set(TOKEN_REDIS_KEY_METHOD(user.email), token, TOKEN_EXPIRED);
+      await this.redisService.set(
+        TOKEN_REDIS_KEY_METHOD(user.email),
+        token,
+        TOKEN_EXPIRED,
+      );
     } catch (err) {
       this.logger.log(err, '第三方账号绑定邮箱token写入缓存失败');
       throw new NewHttpException('登录失败,请重试');

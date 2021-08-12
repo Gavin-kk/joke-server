@@ -17,6 +17,10 @@ import { EditAvatarDto } from '@src/module/user/v1/dto/edit-avatar.dto';
 import { EditUserinfoDto } from '@src/module/user/v1/dto/edit-userinfo.dto';
 import { BlockUserDto } from '@src/module/user/v1/dto/block-user.dto';
 import { AddVisitorDto } from '@src/module/user/v1/dto/add-visitor.dto';
+import { CurrentUserId } from '@src/common/decorator/current-userId.decorator';
+import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
+import * as joi from 'joi';
+const schema = joi.number().required();
 
 @ApiTags('用户模块')
 @Controller('api/v1/user')
@@ -26,9 +30,14 @@ export class UserController {
   @ApiOperation({ summary: '获取用户详情 携带访客信息' })
   @ApiBearerAuth()
   @Get('info')
-  @Auth()
-  public async getUserDetails(@CurrentUser() user: UsersEntity): Promise<UsersEntity> {
-    return this.userService.getUserDetail(user.id);
+  // @Auth()
+  public async getUserDetails(
+    @Query('id') targetUserId: number,
+    @CurrentUserId() userId: number,
+  ): Promise<UsersEntity> {
+    console.log(userId, targetUserId);
+
+    return this.userService.getUserDetail(userId, +targetUserId);
   }
 
   @ApiOperation({ summary: '添加访客' })
@@ -105,7 +114,9 @@ export class UserController {
 
   @ApiOperation({ summary: '搜索用户' })
   @Get('search')
-  public async getUserInfo(@Query('content') content: string): Promise<UsersEntity | null> {
+  public async getUserInfo(
+    @Query('content') content: string,
+  ): Promise<UsersEntity | null> {
     return this.userService.searchUser(content);
   }
 }

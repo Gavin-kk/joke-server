@@ -547,18 +547,38 @@ export class ArticleService {
   //  获取个人所有的话题文章
   public async getUserTopicArticleList(
     userId: number,
-  ): Promise<ArticleEntity[]> {
-    return (
-      (await this.topicRepository
-        .createQueryBuilder('t')
-        .leftJoinAndSelect('t.articles', 'articles')
-        .where('articles.user_id = :userId', { userId })
-        .select('articles.*')
-        .getRawMany()) as ArticleEntity[]
-    ).map((item) => ({
-      ...item,
-      'content-imgs': JSON.parse(item['content-imgs']),
-    }));
+    targetId: number,
+    pageNum: number,
+    // ): Promise<ArticleEntity[]> {
+  ) {
+    if (!userId && !targetId) throw new NewHttpException('参数错误');
+
+    let id: number | undefined;
+    if ((targetId && userId) || (targetId && !userId)) {
+      id = targetId;
+    }
+    if (!targetId && userId) {
+      id = userId;
+    }
+    return this.articleRepository
+      .createQueryBuilder('art')
+      .innerJoinAndSelect('art.topics', 'topics')
+      .leftJoinAndSelect('art.user', 'user')
+      .leftJoinAndSelect('user.userinfo', 'userinfo')
+      .where('art.user_id = :id', { id })
+      .offset((pageNum - 1) * this.pageSize)
+      .limit(this.pageSize)
+      .getMany();
+    // return await this.topicRepository
+    //   .createQueryBuilder('t')
+    //   .leftJoinAndSelect('t.articles', 'articles')
+    //   .where('articles.user_id = :userId', { userId: id })
+    //   // .select('articles.*')
+    //   .getMany();
+    // ).map((item) => ({
+    //   ...item,
+    //   contentImgs: JSON.parse(item['content-imgs']),
+    // }));
   }
 
   // 获取所有点赞的文章列表

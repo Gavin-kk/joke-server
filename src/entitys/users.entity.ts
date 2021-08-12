@@ -102,6 +102,7 @@ export class UsersEntity {
   likeCount: number;
   followCount: number;
   fansCount: number;
+  isMe: boolean;
 
   @OneToMany(() => ArticleEntity, (article) => article.user)
   articles: ArticleEntity[];

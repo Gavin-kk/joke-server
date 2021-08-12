@@ -107,10 +107,12 @@ export class AuthService {
     nickname,
   }: OtherLoginDto): Promise<IAuthServiceOtherLoginError | UsersEntity> {
     // 先验证是否存在该第三方登录的数据
-    const isExists: UserBindEntity | undefined = await this.userBindRepository.findOne({
-      openid,
-      type,
-    });
+    const isExists: UserBindEntity | undefined =
+      await this.userBindRepository.findOne({
+        openid,
+        type,
+      });
+
     // 如果不存在 则在表中记录该用户第三方登录数据 然后抛出异常让前端处理跳转到绑定邮箱密码页面
     if (!isExists) {
       const result: InsertResult = await this.userBindRepository
@@ -150,9 +152,10 @@ export class AuthService {
     // 验证验证码是否正确
     await this.checkVCode(email, VCode);
     // 首先验证该邮箱或者说用户是否已经存在了
-    const emailIsBind: UsersEntity | undefined = await this.userRepository.findOne({
-      email,
-    });
+    const emailIsBind: UsersEntity | undefined =
+      await this.userRepository.findOne({
+        email,
+      });
 
     if (emailIsBind) {
       // 检查用户被封

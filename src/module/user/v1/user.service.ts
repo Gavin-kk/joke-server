@@ -39,7 +39,20 @@ export class UserService {
     private readonly connection: Connection,
   ) {}
   // 获取用户详情
-  public async getUserDetail(userId: number): Promise<UsersEntity> {
+  public async getUserDetail(
+    userIdT?: number,
+    targetUserId?: number,
+  ): Promise<UsersEntity> {
+    let userId: number | undefined;
+    if (!userIdT && !targetUserId) throw new NewHttpException('参数错误');
+    if ((targetUserId && userIdT) || (targetUserId && !userIdT)) {
+      //  查targetId
+      userId = targetUserId;
+    }
+    if (userIdT && !targetUserId) {
+      //  查当前请求的用户
+      userId = userIdT;
+    }
     try {
       // 我的粉丝
       const fans: { fansCount: string } = await this.usersRepository
@@ -77,17 +90,24 @@ export class UserService {
               today: new Date().getTime() - 1000 * 60 * 60 * 24,
             }),
         )
-
         .where('u.id = :userId', { userId })
         .getOne();
 
       user.likeCount = +like.likeCount;
       user.followCount = +follow.followCount;
       user.fansCount = +fans.fansCount;
+      if (
+        typeof userIdT !== 'undefined' &&
+        typeof targetUserId !== 'undefined' &&
+        +userIdT === +targetUserId
+      ) {
+        // 判断当前请求的用户是不是自己
+        user.isMe = true;
+      }
       return user;
     } catch (err) {
       this.logger.error(err, '获取用户信息失败');
-      throw new NewHttpException('未知错误');
+      throw new NewHttpException('没有此用户');
     }
   }
 

@@ -108,13 +108,21 @@ export class ArticleController {
   }
 
   @ApiOperation({
-    summary: '获取当前用户所有话题文章',
+    summary: '获取当前用户所有话题文章 获取指定用户的话题文章列表',
   })
   @ApiBearerAuth()
   @Get('user/topic/list')
-  @Auth()
-  public async getUserTopicArticleList(@CurrentUser('id') userId: number) {
-    return this.articleService.getUserTopicArticleList(userId);
+  // @Auth()
+  public async getUserTopicArticleList(
+    @CurrentUserId() userId: number | undefined,
+    @Query('userId') targetId: number | undefined,
+    @Query('pageNum', new LineCheckTransformPipe(schema)) pageNum: number,
+  ) {
+    return this.articleService.getUserTopicArticleList(
+      userId,
+      targetId,
+      +pageNum,
+    );
   }
 
   @ApiOperation({ summary: '获取指定的文章详情' })
