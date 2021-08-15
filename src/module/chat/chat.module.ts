@@ -8,5 +8,6 @@ import { UsersEntity } from '@src/entitys/users.entity';
 @Module({
   imports: [JwtModule.register({}), TypeOrmModule.forFeature([UsersEntity])],
   providers: [ChatGateway, ChatService],
+  exports: [ChatGateway],
 })
 export class ChatModule {}

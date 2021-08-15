@@ -20,6 +20,8 @@ import { ArticleEntity } from '@src/entitys/article.entity';
 import { compareSync } from 'bcryptjs';
 import { promisify } from 'util';
 import { unlink } from 'fs';
+import { WebSocketServer } from '@nestjs/websockets';
+import { Server } from 'ws';
 
 @Injectable()
 export class UserService {
@@ -38,6 +40,7 @@ export class UserService {
     private readonly redisService: RedisServiceN,
     private readonly connection: Connection,
   ) {}
+
   // 获取用户详情
   public async getUserDetail(
     userIdT?: number,
@@ -75,7 +78,7 @@ export class UserService {
         .select('count(ulike.is_like) likeCount')
         .where('ulike.user_id = :userId', { userId })
         .getRawOne();
-      const user: UsersEntity = await this.usersRepository
+      const query = this.usersRepository
         .createQueryBuilder('u')
         .leftJoinAndSelect('u.userinfo', 'info')
         // 查询访问我的有多少
@@ -89,7 +92,16 @@ export class UserService {
             qb.where('todaySVisitor.time > :today', {
               today: new Date().getTime() - 1000 * 60 * 60 * 24,
             }),
-        )
+        );
+      if (userIdT) {
+        query.leftJoinAndSelect(
+          'u.followed',
+          'follows',
+          'follows.user_id = :userIdT',
+          { userIdT },
+        );
+      }
+      const user: UsersEntity = await query
         .where('u.id = :userId', { userId })
         .getOne();
 

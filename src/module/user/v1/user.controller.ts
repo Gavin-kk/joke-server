@@ -20,12 +20,16 @@ import { AddVisitorDto } from '@src/module/user/v1/dto/add-visitor.dto';
 import { CurrentUserId } from '@src/common/decorator/current-userId.decorator';
 import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
 import * as joi from 'joi';
+import { ChatGateway } from '@src/module/chat/chat.gateway';
 const schema = joi.number().required();
 
 @ApiTags('用户模块')
 @Controller('api/v1/user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private chatGateway: ChatGateway,
+  ) {}
 
   @ApiOperation({ summary: '获取用户详情 携带访客信息' })
   @ApiBearerAuth()
@@ -35,8 +39,6 @@ export class UserController {
     @Query('id') targetUserId: number,
     @CurrentUserId() userId: number,
   ): Promise<UsersEntity> {
-    console.log(userId, targetUserId);
-
     return this.userService.getUserDetail(userId, +targetUserId);
   }
 

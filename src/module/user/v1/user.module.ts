@@ -10,6 +10,8 @@ import { VisitorEntity } from '@src/entitys/visitor.entity';
 import { ArticleEntity } from '@src/entitys/article.entity';
 import { CheckLoginWeakenedMiddleware } from '@src/common/middleware/check-login-weakened.middleware';
 import { JwtModule, JwtService } from '@nestjs/jwt';
+import { ChatGateway } from '@src/module/chat/chat.gateway';
+import { ChatModule } from '@src/module/chat/chat.module';
 
 @Module({
   imports: [
@@ -22,6 +24,7 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
     ]),
     RedisModule,
     JwtModule.register({ secret: process.env.JWT_SECRET }),
+    ChatModule,
   ],
   controllers: [UserController],
   providers: [UserService],

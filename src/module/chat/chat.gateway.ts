@@ -11,7 +11,7 @@ import { ChatService } from './chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import WebSocket, { Server } from 'ws';
-import { Logger, UseFilters, UseGuards } from '@nestjs/common';
+import { Injectable, Logger, UseFilters, UseGuards } from '@nestjs/common';
 import { AuthDto } from '@src/module/chat/dto/auth.dto';
 import { AuthGuard } from '@src/module/chat/auth.guard';
 import { IWs, IWsResponse } from '@src/module/chat/ws.interface';
@@ -22,21 +22,24 @@ import { WebsocketException } from '@src/common/exception/websocket.exception';
 @UseFilters(WebsocketException)
 export class ChatGateway {
   @WebSocketServer()
-  private readonly server: Server;
+  public readonly server: Server;
 
   constructor(private readonly chatService: ChatService) {}
 
   // 权限认证
   @UseGuards(AuthGuard)
   @SubscribeMessage('auth')
-  public auth(@MessageBody() { token }: AuthDto, @ConnectedSocket() client: IWs): IWsResponse {
+  public auth(
+    // @MessageBody() { token }: AuthDto,
+    @ConnectedSocket() client: IWs,
+  ): IWsResponse {
     return { event: 'auth', data: { msg: 'ok', userId: client.user.id } };
   }
 
   @UseGuards(CheckUserAuthGuard)
   @SubscribeMessage('chatMessage')
   public async chatMessage(
-    @MessageBody() { content, targetUserId, time }: CreateChatDto,
+    @MessageBody() { content, targetUserId, time, type, avatar }: CreateChatDto,
     @ConnectedSocket() currentClient: IWs,
   ): Promise<void> {
     // 验证目标用户是否存在 不存在抛出异常
@@ -47,7 +50,18 @@ export class ChatGateway {
       this.server.clients.forEach((client: IWs) => {
         if (client.user.id === targetUserId) {
           isOnline = true;
-          client.send(JSON.stringify({ event: 'chatMessage', data: { content, time } }));
+          client.send(
+            JSON.stringify({
+              event: 'chatMessage',
+              data: {
+                content,
+                time,
+                type,
+                avatar,
+                user: currentClient.user,
+              },
+            }),
+          );
           throw new Error('');
         }
       });
