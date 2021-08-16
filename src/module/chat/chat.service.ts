@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { WsException } from '@nestjs/websockets';
 import { ChatEntity } from '@src/entitys/chat.entity';
 import { IChatMsg } from '@src/module/chat/ws.interface';
+import { FollowService } from '@src/module/follow/v1/follow.service';
 
 @Injectable()
 export class ChatService {
@@ -15,13 +16,29 @@ export class ChatService {
     private readonly usersRepository: Repository<UsersEntity>,
     @InjectRepository(ChatEntity)
     private readonly chatRepository: Repository<ChatEntity>,
+    private followService: FollowService,
   ) {}
 
   // 检查用户是否存在
-  public async checkUserIsExists(userId: number): Promise<void> {
-    const isExists = !!(await this.usersRepository.findOne(userId));
+  public async checkUserIsExists(targetUserId: number): Promise<void> {
+    const isExists = !!(await this.usersRepository.findOne(targetUserId));
     if (!isExists) {
       throw new WsException('不存在目标用户');
+    }
+  }
+  // 检查是否相互关注
+  public async checkWhetherToPayAttentionToEachOther(
+    targetUserId: number,
+    currentUsreId: number,
+  ) {
+    const isFollowEachOther = await this.followService.getMutualList(
+      currentUsreId,
+    );
+    const findIndex: number | -1 = isFollowEachOther.findIndex(
+      (item) => item.id === targetUserId,
+    );
+    if (findIndex === -1) {
+      throw new WsException('没有互相关注呦，需要互相关注才能发送消息呦');
     }
   }
   // 保存离线消息

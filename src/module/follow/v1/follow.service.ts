@@ -3,7 +3,12 @@ import { CreateFollowDto } from './dto/create-follow.dto';
 import { UpdateFollowDto } from './dto/update-follow.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UsersEntity } from '@src/entitys/users.entity';
-import { Connection, QueryRunner, Repository, createQueryBuilder } from 'typeorm';
+import {
+  Connection,
+  QueryRunner,
+  Repository,
+  createQueryBuilder,
+} from 'typeorm';
 import { FollowEntity } from '@src/entitys/follow.entity';
 import { NewHttpException } from '@src/common/exception/customize.exception';
 
@@ -26,10 +31,8 @@ export class FollowService {
     await queryRunner.startTransaction('REPEATABLE READ');
     try {
       // 查询是否已被关注
-      const isFollowUsers: FollowEntity | undefined = await queryRunner.manager.findOne(
-        FollowEntity,
-        { userId, followId },
-      );
+      const isFollowUsers: FollowEntity | undefined =
+        await queryRunner.manager.findOne(FollowEntity, { userId, followId });
       if (typeof isFollowUsers === 'undefined') {
         await queryRunner.manager.save(FollowEntity, { userId, followId });
         await queryRunner.commitTransaction();
@@ -89,7 +92,15 @@ export class FollowService {
       .getRawMany();
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} follow`;
+  public async mutualWhether(
+    userId: number,
+    targetUserId: number,
+  ): Promise<boolean> {
+    // 查看当前用户互关列表
+    const mutualConcernList: UsersEntity[] = await this.getMutualList(userId);
+    const findIndex: number = mutualConcernList.findIndex(
+      (item) => item.id === targetUserId,
+    );
+    return findIndex !== -1;
   }
 }

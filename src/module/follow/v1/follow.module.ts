@@ -10,5 +10,6 @@ import { RedisModule } from '@src/lib/redis/redis.module';
   imports: [TypeOrmModule.forFeature([FollowEntity, UsersEntity]), RedisModule],
   controllers: [FollowController],
   providers: [FollowService],
+  exports: [FollowService],
 })
 export class FollowModule {}

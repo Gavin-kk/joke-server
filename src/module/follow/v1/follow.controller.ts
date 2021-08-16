@@ -1,10 +1,28 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { FollowService } from './follow.service';
 import { CreateFollowDto } from './dto/create-follow.dto';
 import { UpdateFollowDto } from './dto/update-follow.dto';
-import { ApiBearerAuth, ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiProperty,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Auth } from '@src/common/decorator/auth.decorator';
 import { CurrentUser } from '@src/common/decorator/current-user.decorator';
+import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
+import * as joi from 'joi';
+
+const checkNum = joi.number().required();
 
 @ApiTags('关注模块')
 @Controller('api/v1/follow')
@@ -15,7 +33,10 @@ export class FollowController {
   @ApiBearerAuth()
   @Post()
   @Auth()
-  public async follow(@Body() { follwoId }: CreateFollowDto, @CurrentUser('id') userId: number) {
+  public async follow(
+    @Body() { follwoId }: CreateFollowDto,
+    @CurrentUser('id') userId: number,
+  ) {
     return this.followService.followUsers(follwoId, userId);
   }
 
@@ -41,5 +62,17 @@ export class FollowController {
   @Auth()
   public async getFanList(@CurrentUser('id') userId: number) {
     return this.followService.getFanList(userId);
+  }
+
+  @ApiOperation({ summary: '查看当前用户是否和目标用户是互相关注' })
+  @ApiBearerAuth()
+  @Get('mutual/whether')
+  @Auth()
+  public async mutualWhether(
+    @CurrentUser('id') userId: number,
+    @Query('targetUserId', new LineCheckTransformPipe(checkNum))
+    targetUserId: number,
+  ): Promise<boolean> {
+    return this.followService.mutualWhether(userId, targetUserId);
   }
 }

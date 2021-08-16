@@ -56,13 +56,24 @@ export class ChatGateway {
     @MessageBody() { content, targetUserId, time, type, avatar }: CreateChatDto,
     @ConnectedSocket() currentClient: IWs,
   ): Promise<void> {
-    this.server.clients.forEach((item: IWs) => {
-      console.log(item.user);
-    });
-    // 验证目标用户是否存在 不存在抛出异常
+    // 验证目标用户是否存在 不存在抛出异常 和
     await this.chatService.checkUserIsExists(targetUserId);
+    // 验证是否是相互关注的
+    await this.chatService.checkWhetherToPayAttentionToEachOther(
+      targetUserId,
+      currentClient.user.id,
+    );
+
     // 用户是否在线 如果不在线就把聊天消息存储到数据库中
     let isOnline = false;
+    const data: IChatMsg = {
+      content,
+      time,
+      type,
+      avatar,
+      user: currentClient.user,
+    };
+
     try {
       this.server.clients.forEach((client: IWs) => {
         if (client.user.id === targetUserId) {
@@ -70,13 +81,7 @@ export class ChatGateway {
           client.send(
             JSON.stringify({
               event: 'chatMessage',
-              data: {
-                content,
-                time,
-                type,
-                avatar,
-                user: currentClient.user,
-              },
+              data,
             }),
           );
           throw new Error('');
@@ -85,16 +90,9 @@ export class ChatGateway {
     } catch (err) {}
 
     if (!isOnline) {
-      const msgData: IChatMsg = {
-        targetUserId,
-        content,
-        time,
-        type,
-        avatar,
-        user: currentClient.user,
-      };
+      data.targetUserId = targetUserId;
       //  把本次聊天数据存储入数据库并存入未读
-      await this.chatService.saveOfflineMessage(msgData);
+      await this.chatService.saveOfflineMessage(data);
     }
   }
 

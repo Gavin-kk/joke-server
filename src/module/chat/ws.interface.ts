@@ -13,7 +13,7 @@ export interface IWsResponse {
 export interface IChatMsg {
   content: string;
   type: string;
-  targetUserId: number;
+  targetUserId?: number;
   avatar: string;
   time: number;
   user: UsersEntity;
