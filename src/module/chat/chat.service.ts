@@ -5,12 +5,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UsersEntity } from '@src/entitys/users.entity';
 import { Repository } from 'typeorm';
 import { WsException } from '@nestjs/websockets';
+import { ChatEntity } from '@src/entitys/chat.entity';
+import { IChatMsg } from '@src/module/chat/ws.interface';
 
 @Injectable()
 export class ChatService {
   constructor(
     @InjectRepository(UsersEntity)
     private readonly usersRepository: Repository<UsersEntity>,
+    @InjectRepository(ChatEntity)
+    private readonly chatRepository: Repository<ChatEntity>,
   ) {}
 
   // 检查用户是否存在
@@ -20,20 +24,16 @@ export class ChatService {
       throw new WsException('不存在目标用户');
     }
   }
-
-  findAll() {
-    return `This action returns all chat`;
+  // 保存离线消息
+  public async saveOfflineMessage(save: IChatMsg) {
+    await this.chatRepository.save(save);
   }
-
-  findOne(id: number) {
-    return `This action returns a #${id} chat`;
+  // 获取所有离线未读消息
+  public async getOfflineMsg(userId: number): Promise<ChatEntity[]> {
+    return this.chatRepository.find({ targetUserId: userId });
   }
-
-  update(id: number, updateChatDto: UpdateChatDto) {
-    return `This action updates a #${id} chat`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} chat`;
+  //   删除离线消息
+  public async removeOfflineMsg(userId: number) {
+    await this.chatRepository.delete({ targetUserId: userId });
   }
 }

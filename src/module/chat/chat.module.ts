@@ -4,9 +4,13 @@ import { ChatGateway } from './chat.gateway';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersEntity } from '@src/entitys/users.entity';
+import { ChatEntity } from '@src/entitys/chat.entity';
 
 @Module({
-  imports: [JwtModule.register({}), TypeOrmModule.forFeature([UsersEntity])],
+  imports: [
+    JwtModule.register({}),
+    TypeOrmModule.forFeature([UsersEntity, ChatEntity]),
+  ],
   providers: [ChatGateway, ChatService],
   exports: [ChatGateway],
 })

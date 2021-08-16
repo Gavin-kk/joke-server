@@ -14,9 +14,10 @@ import WebSocket, { Server } from 'ws';
 import { Injectable, Logger, UseFilters, UseGuards } from '@nestjs/common';
 import { AuthDto } from '@src/module/chat/dto/auth.dto';
 import { AuthGuard } from '@src/module/chat/auth.guard';
-import { IWs, IWsResponse } from '@src/module/chat/ws.interface';
+import { IChatMsg, IWs, IWsResponse } from '@src/module/chat/ws.interface';
 import { CheckUserAuthGuard } from '@src/module/chat/check-user-auth.guard';
 import { WebsocketException } from '@src/common/exception/websocket.exception';
+import { ChatEntity } from '@src/entitys/chat.entity';
 
 @WebSocketGateway(5001)
 @UseFilters(WebsocketException)
@@ -29,11 +30,24 @@ export class ChatGateway {
   // 权限认证
   @UseGuards(AuthGuard)
   @SubscribeMessage('auth')
-  public auth(
+  public async auth(
     // @MessageBody() { token }: AuthDto,
     @ConnectedSocket() client: IWs,
-  ): IWsResponse {
-    return { event: 'auth', data: { msg: 'ok', userId: client.user.id } };
+  ) {
+    client.send(
+      JSON.stringify({
+        event: 'auth',
+        data: { msg: 'ok', userId: client.user.id },
+      }),
+    );
+
+    // 查找离线消息
+    const offlineMsg: ChatEntity[] = await this.chatService.getOfflineMsg(
+      client.user.id,
+    );
+    client.send(JSON.stringify({ event: 'offlineMsg', data: offlineMsg }));
+    // 删除当前用户的离线消息
+    await this.chatService.removeOfflineMsg(client.user.id);
   }
 
   @UseGuards(CheckUserAuthGuard)
@@ -42,6 +56,9 @@ export class ChatGateway {
     @MessageBody() { content, targetUserId, time, type, avatar }: CreateChatDto,
     @ConnectedSocket() currentClient: IWs,
   ): Promise<void> {
+    this.server.clients.forEach((item: IWs) => {
+      console.log(item.user);
+    });
     // 验证目标用户是否存在 不存在抛出异常
     await this.chatService.checkUserIsExists(targetUserId);
     // 用户是否在线 如果不在线就把聊天消息存储到数据库中
@@ -68,7 +85,27 @@ export class ChatGateway {
     } catch (err) {}
 
     if (!isOnline) {
+      const msgData: IChatMsg = {
+        targetUserId,
+        content,
+        time,
+        type,
+        avatar,
+        user: currentClient.user,
+      };
       //  把本次聊天数据存储入数据库并存入未读
+      await this.chatService.saveOfflineMessage(msgData);
     }
+  }
+
+  @UseGuards(CheckUserAuthGuard)
+  @SubscribeMessage('heartbeat')
+  public heartbeat(@ConnectedSocket() socket: IWs) {
+    socket.send(
+      JSON.stringify({
+        event: 'heartbeat',
+        data: { msg: 'ok' },
+      }),
+    );
   }
 }
