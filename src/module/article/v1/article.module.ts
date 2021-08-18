@@ -12,6 +12,7 @@ import { CheckLoginWeakenedMiddleware } from '@src/common/middleware/check-login
 import { UserArticleLikeEntity } from '@src/entitys/user-article-like.entity';
 import { UsersEntity } from '@src/entitys/users.entity';
 import { CommentEntity } from '@src/entitys/comment.entity';
+import { ChatModule } from '@src/module/chat/chat.module';
 
 @Module({
   imports: [
@@ -24,8 +25,9 @@ import { CommentEntity } from '@src/entitys/comment.entity';
       UserArticleLikeEntity,
       CommentEntity,
     ]),
-    RedisModule,
     JwtModule.register({ secret: process.env.JWT_SECRET }),
+    RedisModule,
+    ChatModule,
   ],
   controllers: [ArticleController],
   providers: [ArticleService],

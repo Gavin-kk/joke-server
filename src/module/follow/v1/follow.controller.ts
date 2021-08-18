@@ -21,13 +21,17 @@ import { Auth } from '@src/common/decorator/auth.decorator';
 import { CurrentUser } from '@src/common/decorator/current-user.decorator';
 import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
 import * as joi from 'joi';
+import { ChatGateway } from '@src/module/chat/chat.gateway';
 
 const checkNum = joi.number().required();
 
 @ApiTags('关注模块')
 @Controller('api/v1/follow')
 export class FollowController {
-  constructor(private readonly followService: FollowService) {}
+  constructor(
+    private readonly followService: FollowService,
+    private readonly chatGateway: ChatGateway,
+  ) {}
 
   @ApiOperation({ summary: '关注用户', description: '需要传入 被关注用户的id' })
   @ApiBearerAuth()
@@ -36,8 +40,13 @@ export class FollowController {
   public async follow(
     @Body() { follwoId }: CreateFollowDto,
     @CurrentUser('id') userId: number,
-  ) {
-    return this.followService.followUsers(follwoId, userId);
+  ): Promise<'关注成功' | '取关成功'> {
+    const result: '关注成功' | '取关成功' =
+      await this.followService.followUsers(follwoId, userId);
+    if (result === '关注成功') {
+      await this.chatGateway.sendFollowMsg(follwoId);
+    }
+    return result;
   }
 
   @ApiOperation({ summary: '获取个人关注的用户列表 需要登录' })
@@ -56,7 +65,7 @@ export class FollowController {
     return this.followService.getMutualList(userId);
   }
 
-  @ApiOperation({ summary: '获取粉丝用户列表 需要登录' })
+  @ApiOperation({ summary: '获取粉丝用户列表 需要登录 携带是否互关' })
   @ApiBearerAuth()
   @Get('fans')
   @Auth()

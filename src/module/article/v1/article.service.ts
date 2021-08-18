@@ -482,7 +482,13 @@ export class ArticleService {
       },
     );
 
-    if (!article) throw new NewHttpException('文章不存在');
+    if (!article) {
+      // 回滚事务
+      await queryRunner.rollbackTransaction();
+      // 释放数据库事务
+      await queryRunner.release();
+      throw new NewHttpException('文章不存在');
+    }
 
     try {
       if (ifExists) {
@@ -569,16 +575,6 @@ export class ArticleService {
       .offset((pageNum - 1) * this.pageSize)
       .limit(this.pageSize)
       .getMany();
-    // return await this.topicRepository
-    //   .createQueryBuilder('t')
-    //   .leftJoinAndSelect('t.articles', 'articles')
-    //   .where('articles.user_id = :userId', { userId: id })
-    //   // .select('articles.*')
-    //   .getMany();
-    // ).map((item) => ({
-    //   ...item,
-    //   contentImgs: JSON.parse(item['content-imgs']),
-    // }));
   }
 
   // 获取所有点赞的文章列表
@@ -626,6 +622,24 @@ export class ArticleService {
       commentCount,
       likeCount,
     };
+  }
+
+  // 获取谁给我的文章点赞了 携带文章信息
+  public async likeMine(
+    userId: number,
+    pageNum: number,
+  ): Promise<UserArticleLikeEntity[]> {
+    return this.userArticleLikeRepository
+      .createQueryBuilder('ul')
+      .leftJoinAndSelect('ul.article', 'article')
+      .leftJoin('article.user', 'au')
+      .leftJoinAndSelect('ul.user', 'ulu')
+      .where('au.id = :userId', { userId })
+      .andWhere('ul.is_like = 1')
+      .andWhere('ul.user_id != :userId', { userId })
+      .offset((pageNum - 1) * this.pageSize)
+      .limit(this.pageSize)
+      .getMany();
   }
 
   public async getAllArticlesFollowedByUser(
@@ -683,5 +697,10 @@ export class ArticleService {
     num.forEach((item) => {
       if (isNaN(item)) throw new NewHttpException('参数错误');
     });
+  }
+
+  // 获取文章
+  public async getArticle(articleId: number): Promise<ArticleEntity> {
+    return this.articleRepository.findOne(articleId);
   }
 }

@@ -23,12 +23,16 @@ import { LikeDto } from '@src/module/article/v1/dto/like.dto';
 import { UserArticleLikeEntity } from '@src/entitys/user-article-like.entity';
 import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
 import * as joi from 'joi';
+import { ChatGateway } from '@src/module/chat/chat.gateway';
 const schema = joi.number().required();
 
 @ApiTags('文章模块')
 @Controller('api/v1/article')
 export class ArticleController {
-  constructor(private readonly articleService: ArticleService) {}
+  constructor(
+    private readonly articleService: ArticleService,
+    private readonly chatGateway: ChatGateway,
+  ) {}
 
   @ApiOperation({ summary: '获取文章所有的分类' })
   @Get('classify/all')
@@ -171,11 +175,33 @@ export class ArticleController {
     @Body() likeDto: LikeDto,
     @CurrentUser() user: UsersEntity,
   ): Promise<string> {
-    return await this.articleService.likeArticle(
+    const isLike: string = await this.articleService.likeArticle(
       likeDto.articleId,
       user,
       likeDto.type,
     );
+    if (isLike === '喜欢成功') {
+      const article: ArticleEntity = await this.articleService.getArticle(
+        likeDto.articleId,
+      );
+      if (article.userId !== user.id) {
+        await this.chatGateway.sendLikeCount(article.userId);
+      }
+    }
+    return isLike;
+  }
+
+  @ApiOperation({
+    summary: '查询谁给当前用户的文章点赞了 点赞的是哪篇文章',
+  })
+  @ApiBearerAuth()
+  @Get('like/mine')
+  @Auth()
+  public async likeMine(
+    @CurrentUser() user: UsersEntity,
+    @Query('pageNum', new LineCheckTransformPipe(schema)) pageNum: number,
+  ): Promise<UserArticleLikeEntity[]> {
+    return await this.articleService.likeMine(user.id, pageNum);
   }
 
   @ApiOperation({

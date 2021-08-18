@@ -43,8 +43,8 @@ export class FollowService {
         return '取关成功';
       }
     } catch (err) {
-      this.logger.error(err, '关注或取关失败');
       await queryRunner.rollbackTransaction();
+      this.logger.error(err, '关注或取关失败');
       throw new NewHttpException('关注或取关失败');
     } finally {
       await queryRunner.release();
@@ -69,15 +69,37 @@ export class FollowService {
   }
   // 获取粉丝列表
   public async getFanList(userId: number) {
-    return this.usersRepository
+    // 关注我的用户
+    const userList: UsersEntity[] = await this.usersRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.followed', 'followed')
       .leftJoinAndSelect('followed.user', 'users')
       .select(
         'users.id,users.username,users.avatar,users.email,users.phone,users.nickname,users.createAt,users.updateAt',
       )
+      .orderBy('followed.id', 'DESC')
       .where('user.id = :userId', { userId })
       .getRawMany();
+
+    if (userList[0].id === null) {
+      return [];
+    }
+    // 查询所有互关列表
+    const mutualList = await this.getMutualList(userId);
+    return userList.map((item) => {
+      const mutualRelations = mutualList.find((itex) => itex.id === item.id);
+      if (typeof mutualRelations !== 'undefined') {
+        return {
+          ...item,
+          followEachOther: true,
+        };
+      } else {
+        return {
+          ...item,
+          followEachOther: false,
+        };
+      }
+    });
   }
 
   public async getFollowMeUserList(userId: number) {

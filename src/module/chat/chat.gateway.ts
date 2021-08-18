@@ -13,11 +13,13 @@ import { UpdateChatDto } from './dto/update-chat.dto';
 import WebSocket, { Server } from 'ws';
 import { Injectable, Logger, UseFilters, UseGuards } from '@nestjs/common';
 import { AuthDto } from '@src/module/chat/dto/auth.dto';
-import { AuthGuard } from '@src/module/chat/auth.guard';
+import { AuthGuard } from '@src/module/chat/guard/auth.guard';
 import { IChatMsg, IWs, IWsResponse } from '@src/module/chat/ws.interface';
-import { CheckUserAuthGuard } from '@src/module/chat/check-user-auth.guard';
+import { CheckUserAuthGuard } from '@src/module/chat/guard/check-user-auth.guard';
 import { WebsocketException } from '@src/common/exception/websocket.exception';
 import { ChatEntity } from '@src/entitys/chat.entity';
+import { AttentionCountEntity } from '@src/entitys/attention-count.entity';
+import { LikeCountEntity } from '@src/entitys/like-count.entity';
 
 @WebSocketGateway(5001)
 @UseFilters(WebsocketException)
@@ -33,7 +35,7 @@ export class ChatGateway {
   public async auth(
     // @MessageBody() { token }: AuthDto,
     @ConnectedSocket() client: IWs,
-  ) {
+  ): Promise<void> {
     client.send(
       JSON.stringify({
         event: 'auth',
@@ -46,8 +48,35 @@ export class ChatGateway {
       client.user.id,
     );
     client.send(JSON.stringify({ event: 'offlineMsg', data: offlineMsg }));
+    // 查找离线时发送的关注请求
+    const offlineFollowCount: AttentionCountEntity | undefined =
+      await this.chatService.findFollowingRequestsWhileOffline(client.user.id);
+
+    if (typeof offlineFollowCount !== 'undefined') {
+      client.send(
+        JSON.stringify({
+          event: 'offlineFollowCount',
+          data: offlineFollowCount.count,
+        }),
+      );
+    }
+    // 查找离线时的点赞数量
+    const offlineLikeCount: LikeCountEntity | undefined =
+      await this.chatService.getTheNumberOfLikesWhenOffline(client.user.id);
+    if (typeof offlineFollowCount !== 'undefined') {
+      client.send(
+        JSON.stringify({
+          event: 'offlineLikeCount',
+          data: offlineLikeCount.count,
+        }),
+      );
+    }
     // 删除当前用户的离线消息
     await this.chatService.removeOfflineMsg(client.user.id);
+    // 删除离线时的关注请求
+    await this.chatService.RemoveFollowingRequestsWhileOffline(client.user.id);
+    // 删除离线时的点赞数量
+    await this.chatService.removeTheNumberOfLikesWhenOffline(client.user.id);
   }
 
   @UseGuards(CheckUserAuthGuard)
@@ -64,8 +93,6 @@ export class ChatGateway {
       currentClient.user.id,
     );
 
-    // 用户是否在线 如果不在线就把聊天消息存储到数据库中
-    let isOnline = false;
     const data: IChatMsg = {
       content,
       time,
@@ -73,21 +100,11 @@ export class ChatGateway {
       avatar,
       user: currentClient.user,
     };
-
-    try {
-      this.server.clients.forEach((client: IWs) => {
-        if (client.user.id === targetUserId) {
-          isOnline = true;
-          client.send(
-            JSON.stringify({
-              event: 'chatMessage',
-              data,
-            }),
-          );
-          throw new Error('');
-        }
-      });
-    } catch (err) {}
+    // 用户是否在线 如果不在线就把聊天消息存储到数据库中
+    const isOnline: boolean = this.send(targetUserId, {
+      event: 'chatMessage',
+      data,
+    });
 
     if (!isOnline) {
       data.targetUserId = targetUserId;
@@ -98,12 +115,54 @@ export class ChatGateway {
 
   @UseGuards(CheckUserAuthGuard)
   @SubscribeMessage('heartbeat')
-  public heartbeat(@ConnectedSocket() socket: IWs) {
+  public heartbeat(@ConnectedSocket() socket: IWs): void {
     socket.send(
       JSON.stringify({
         event: 'heartbeat',
         data: { msg: 'ok' },
       }),
     );
+  }
+
+  //  给指定用户发送关注通知 有人关注此人通知此人有人关注了他
+  public async sendFollowMsg(targetUserId: number) {
+    const isOnline: boolean = this.send(targetUserId, {
+      event: 'offlineFollowCount',
+      data: 1,
+    });
+    // 离线消息存入数据库
+    if (!isOnline) {
+      await this.chatService.saveFollowingRequestsWhileOffline(targetUserId);
+    }
+  }
+
+  //  给指定用户发送点赞通知 有人点赞该用户的文章或动态时给客户端推送一个数量
+  public async sendLikeCount(targetUserId: number) {
+    const isOnline: boolean = this.send(targetUserId, {
+      event: 'offlineLikeCount',
+      data: 1,
+    });
+    // 离线消息存入数据库
+    if (!isOnline) {
+      await this.chatService.saveTheNumberOfLikesWhenOffline(targetUserId);
+    }
+  }
+
+  // 返回是否在线
+  public send(
+    targetUserId: number,
+    data: { event: string; data: any },
+  ): boolean {
+    let isOnline = false;
+    try {
+      this.server.clients.forEach((client: IWs) => {
+        if (client.user.id === targetUserId) {
+          isOnline = true;
+          client.send(JSON.stringify(data));
+          throw new Error('');
+        }
+      });
+    } catch (err) {}
+    return isOnline;
   }
 }
