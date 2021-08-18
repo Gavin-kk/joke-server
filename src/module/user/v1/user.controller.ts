@@ -118,7 +118,7 @@ export class UserController {
   @Get('search')
   public async getUserInfo(
     @Query('content') content: string,
-  ): Promise<UsersEntity | null> {
+  ): Promise<UsersEntity[]> {
     return this.userService.searchUser(content);
   }
 }

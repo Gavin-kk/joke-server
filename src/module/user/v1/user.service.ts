@@ -164,16 +164,17 @@ export class UserService {
     }
   }
 
-  public async searchUser(content: string): Promise<UsersEntity | null> {
+  public async searchUser(content: string): Promise<UsersEntity[]> {
     if (!content) throw new NewHttpException('参数错误');
-    return (
-      (await this.usersRepository
-        .createQueryBuilder('u')
-        .where('CONCAT(u.username,u.email,u.nickname)  like :content', {
+    return this.usersRepository
+      .createQueryBuilder('u')
+      .where(
+        "CONCAT(IFNULL(`username`,''),IFNULL(`email`,''),IFNULL(`nickname`,'')) like :content",
+        {
           content: `%${content}%`,
-        })
-        .getOne()) || null
-    );
+        },
+      )
+      .getMany();
   }
 
   public async editPassword(
