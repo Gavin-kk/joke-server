@@ -88,22 +88,15 @@ export class FollowService {
     const mutualList = await this.getMutualList(userId);
     return userList.map((item) => {
       const mutualRelations = mutualList.find((itex) => itex.id === item.id);
-      if (typeof mutualRelations !== 'undefined') {
-        return {
-          ...item,
-          followEachOther: true,
-        };
-      } else {
-        return {
-          ...item,
-          followEachOther: false,
-        };
-      }
+      return {
+        ...item,
+        followEachOther: typeof mutualRelations !== 'undefined',
+      };
     });
   }
 
   public async getFollowMeUserList(userId: number) {
-    return this.usersRepository
+    const userList: UsersEntity[] = await this.usersRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.follows', 'followed')
       .leftJoinAndSelect('followed.follow', 'users')
@@ -112,6 +105,15 @@ export class FollowService {
       )
       .where('user.id = :userId', { userId })
       .getRawMany();
+    // 查询所有互关列表
+    const mutualList = await this.getMutualList(userId);
+    return userList.map((item) => {
+      const mutualRelations = mutualList.find((itex) => itex.id === item.id);
+      return {
+        ...item,
+        followEachOther: typeof mutualRelations !== 'undefined',
+      };
+    });
   }
 
   public async mutualWhether(

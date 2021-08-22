@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { UsersEntity } from './users.entity';
 import { CommentEntity } from './comment.entity';
+import { UserCommentLikeEntity } from '@src/entitys/user-comment-like.entity';
 
 @Index('comment_id', ['commentId'], {})
 @Index('target_id', ['targetId'], {})
@@ -69,4 +70,10 @@ export class ReplyEntity {
 
   @OneToMany(() => ReplyEntity, (reply) => reply.target)
   replies: ReplyEntity[];
+
+  @OneToMany(
+    () => UserCommentLikeEntity,
+    (UserCommentLikeEntity) => UserCommentLikeEntity.reply,
+  )
+  userCommentLikes: UserCommentLikeEntity[];
 }

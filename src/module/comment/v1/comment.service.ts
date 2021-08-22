@@ -6,8 +6,12 @@ import { ArticleEntity } from '@src/entitys/article.entity';
 import { PostCommentDto } from '@src/module/comment/v1/dto/post-comment.dto';
 import { NewHttpException } from '@src/common/exception/customize.exception';
 import { UsersEntity } from '@src/entitys/users.entity';
-import { v4 as uuidUtil } from 'uuid';
 import { ReplyEntity } from '@src/entitys/reply.entity';
+import { UserCommentLikeEntity } from '@src/entitys/user-comment-like.entity';
+import {
+  LikeCommentDto,
+  LikeCommentType,
+} from '@src/module/comment/v1/dto/like-comment.dto';
 
 @Injectable()
 export class CommentService {
@@ -20,6 +24,8 @@ export class CommentService {
     private readonly articleRepository: Repository<ArticleEntity>,
     @InjectRepository(ReplyEntity)
     private readonly replyRepository: Repository<ReplyEntity>,
+    @InjectRepository(UserCommentLikeEntity)
+    private readonly userCommentLikeRepository: Repository<UserCommentLikeEntity>,
   ) {}
 
   public async postAcomment(
@@ -105,18 +111,71 @@ export class CommentService {
       .getOne();
   }
 
-  test() {
-    return this.commentRepository
-      .createQueryBuilder('c')
-      .leftJoinAndSelect('c.reply', 'replies')
-      .getMany();
-    // return this.replyRepository
-    //   .createQueryBuilder('r')
-    //   .leftJoinAndSelect('r.parentUu', 'uu')
-    //   .leftJoinAndSelect('r.comment', 'comment')
-    //   .where('comment.article_id = 3')
-    //   .andWhere('uu.id = comment.id')
-    //   .andWhere('r.target_moment_id is not null')
-    //   .getMany();
+  public async likeComment(
+    { type, commentId }: LikeCommentDto,
+    user: UsersEntity,
+  ) {
+    try {
+      if (type === LikeCommentType.firstLevelComment) {
+        // 查询是否存在评论
+        const isExistsComment: CommentEntity | undefined =
+          await this.commentRepository.findOne({
+            id: commentId,
+          });
+        if (typeof isExistsComment === 'undefined') {
+          throw new NewHttpException('评论不存在');
+        }
+        // 查询是否已经点赞了
+        const isExists: UserCommentLikeEntity | undefined =
+          await this.userCommentLikeRepository.findOne({
+            userId: user.id,
+            commentId,
+          });
+        if (typeof isExists !== 'undefined') {
+          await this.userCommentLikeRepository.delete({
+            userId: user.id,
+            commentId,
+          });
+          return '取消点赞成功';
+        } else {
+          await this.userCommentLikeRepository.save({
+            commentId,
+            userId: user.id,
+          });
+          return '点赞成功';
+        }
+      } else if (type === LikeCommentType.secondaryComment) {
+        // 查询是否存在评论
+        const isExistsComment: ReplyEntity | undefined =
+          await this.replyRepository.findOne({
+            id: commentId,
+          });
+        if (typeof isExistsComment === 'undefined') {
+          throw new NewHttpException('评论不存在');
+        }
+        // 查询是否已经点赞了
+        const isExists: UserCommentLikeEntity | undefined =
+          await this.userCommentLikeRepository.findOne({
+            userId: user.id,
+            replyId: commentId,
+          });
+        if (typeof isExists !== 'undefined') {
+          await this.userCommentLikeRepository.delete({
+            userId: user.id,
+            replyId: commentId,
+          });
+          return '取消点赞成功';
+        } else {
+          await this.userCommentLikeRepository.save({
+            replyId: commentId,
+            userId: user.id,
+          });
+          return '点赞成功';
+        }
+      }
+    } catch (err) {
+      this.logger.error(err, '评论点赞错误');
+      throw new NewHttpException('点赞错误');
+    }
   }
 }

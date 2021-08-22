@@ -6,10 +6,16 @@ import { CommentEntity } from '@src/entitys/comment.entity';
 import { ArticleEntity } from '@src/entitys/article.entity';
 import { RedisModule } from '@src/lib/redis/redis.module';
 import { ReplyEntity } from '@src/entitys/reply.entity';
+import { UserCommentLikeEntity } from '@src/entitys/user-comment-like.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CommentEntity, ArticleEntity, ReplyEntity]),
+    TypeOrmModule.forFeature([
+      CommentEntity,
+      ArticleEntity,
+      ReplyEntity,
+      UserCommentLikeEntity,
+    ]),
     RedisModule,
   ],
   controllers: [CommentController],

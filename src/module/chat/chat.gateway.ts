@@ -63,7 +63,8 @@ export class ChatGateway {
     // 查找离线时的点赞数量
     const offlineLikeCount: LikeCountEntity | undefined =
       await this.chatService.getTheNumberOfLikesWhenOffline(client.user.id);
-    if (typeof offlineFollowCount !== 'undefined') {
+
+    if (typeof offlineLikeCount !== 'undefined') {
       client.send(
         JSON.stringify({
           event: 'offlineLikeCount',
@@ -100,6 +101,7 @@ export class ChatGateway {
       avatar,
       user: currentClient.user,
     };
+
     // 用户是否在线 如果不在线就把聊天消息存储到数据库中
     const isOnline: boolean = this.send(targetUserId, {
       event: 'chatMessage',

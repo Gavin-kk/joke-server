@@ -24,6 +24,7 @@ import { UserArticleLikeEntity } from '@src/entitys/user-article-like.entity';
 import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
 import * as joi from 'joi';
 import { ChatGateway } from '@src/module/chat/chat.gateway';
+import { GetUserTopicArticleListDto } from '@src/module/article/v1/dto/get-user-topic-article-list.dto';
 const schema = joi.number().required();
 
 @ApiTags('文章模块')
@@ -119,13 +120,14 @@ export class ArticleController {
   // @Auth()
   public async getUserTopicArticleList(
     @CurrentUserId() userId: number | undefined,
-    @Query('userId') targetId: number | undefined,
-    @Query('pageNum', new LineCheckTransformPipe(schema)) pageNum: number,
+    @Query() dto: GetUserTopicArticleListDto,
+    // @Query('userId') targetId: number | undefined,
+    // @Query('pageNum', new LineCheckTransformPipe(schema)) pageNum: number,
   ) {
     return this.articleService.getUserTopicArticleList(
       userId,
-      targetId,
-      +pageNum,
+      +dto.userId,
+      +dto.pageNum,
     );
   }
 
@@ -185,6 +187,7 @@ export class ArticleController {
         likeDto.articleId,
       );
       if (article.userId !== user.id) {
+        console.log(1);
         await this.chatGateway.sendLikeCount(article.userId);
       }
     }

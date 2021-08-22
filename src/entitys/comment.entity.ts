@@ -13,6 +13,7 @@ import {
 import { ArticleEntity } from './article.entity';
 import { UsersEntity } from './users.entity';
 import { ReplyEntity } from './reply.entity';
+import { UserCommentLikeEntity } from './user-comment-like.entity';
 
 @Index('article_id-comment_article_id', ['articleId'], {})
 // @Index('comment_uuid', ['uuid'])
@@ -79,4 +80,10 @@ export class CommentEntity {
 
   @OneToMany(() => ReplyEntity, (reply) => reply.comment)
   reply: ReplyEntity[];
+
+  @OneToMany(
+    () => UserCommentLikeEntity,
+    (userCommentLike) => userCommentLike.comment,
+  )
+  userCommentLikes: UserCommentLikeEntity[];
 }

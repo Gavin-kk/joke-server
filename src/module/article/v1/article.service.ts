@@ -38,8 +38,10 @@ export interface CreateArticle {
 export interface ICount {
   articleCount: number;
   topicArticleCount: number;
-  commentCount: number;
-  likeCount: number;
+  /*  commentCount: number;
+  likeCount: number;*/
+  attentionCount: number;
+  fansCount: number;
 }
 
 export const enum ClassifyType {
@@ -605,22 +607,37 @@ export class ArticleService {
         .where('articles.user_id = :userId', { userId })
         .select('count(articles.id) topicArticleCount')
         .getRawOne();
-    // 个人所有评论的数量
-    const commentCount: number = await this.commentRepository
-      .createQueryBuilder('c')
-      .where('c.user_id = :userId', { userId })
-      .getCount();
-    // 个人所有点赞的数量
+    // 获取个人所有关注的用户
+    const [{ attentionCount }]: { attentionCount: string }[] =
+      await this.usersRepository
+        .createQueryBuilder('u')
+        .leftJoinAndSelect('u.follows', 'follows')
+        .select('count(follows.id) attentionCount')
+        .where('u.id = :userId', { userId })
+        .getRawMany();
+    // const attentionCount: number = await this.usersRepository
+    //   .createQueryBuilder('u')
+    //   .leftJoinAndSelect('u.follows', 'follows')
+    //   .where('u.id = :userId', { userId })
+    //   .getCount();
+    /*  // 个人所有点赞的数量
     const likeCount: number = await this.userArticleLikeRepository
       .createQueryBuilder('l')
       .where('l.user_id = :userId', { userId })
       .andWhere('l.is_like = 1')
-      .getCount();
+      .getCount();    */
+    // 所有关注我的粉丝数量
+    const [{ fansCount }]: { fansCount: string }[] = await this.usersRepository
+      .createQueryBuilder('u')
+      .leftJoinAndSelect('u.followed', 'followed')
+      .select('count(followed.id) fansCount')
+      .where('u.id = :userId', { userId })
+      .getRawMany();
     return {
       articleCount,
       topicArticleCount: +topicArticleCount,
-      commentCount,
-      likeCount,
+      attentionCount: +attentionCount,
+      fansCount: +fansCount,
     };
   }
 
@@ -655,6 +672,7 @@ export class ArticleService {
         'userArticlesLikes.user_id = :userId',
         { userId: user.id },
       )
+      .leftJoinAndSelect('art.topics', 'topis')
       .leftJoinAndSelect(
         'user.followed',
         'followed',

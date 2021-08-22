@@ -121,4 +121,15 @@ export class UserController {
   ): Promise<UsersEntity[]> {
     return this.userService.searchUser(content);
   }
+
+  @ApiOperation({ summary: '更改用户主页背景' })
+  @ApiBearerAuth()
+  @Put('changebg')
+  @Auth()
+  public async changeUserBg(
+    @CurrentUser('id') userId: number,
+    @Body('imageUrl') imageUrl: string,
+  ): Promise<void> {
+    return this.userService.changeUserBg(userId, imageUrl);
+  }
 }

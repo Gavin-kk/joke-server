@@ -18,6 +18,7 @@ import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pi
 import { checkId } from '@src/module/comment/v1/dto/comment.schema';
 import { CommentEntity } from '@src/entitys/comment.entity';
 import { GetArticleCommentListDto } from '@src/module/comment/v1/dto/get-article-comment-list.dto';
+import { LikeCommentDto } from '@src/module/comment/v1/dto/like-comment.dto';
 
 @ApiTags('文章评论模块')
 @Controller('api/v1/comment')
@@ -51,14 +52,6 @@ export class CommentController {
   }
 
   @ApiOperation({
-    summary: 'test comment',
-  })
-  @Get('test')
-  public async Test() {
-    return this.commentService.test();
-  }
-
-  @ApiOperation({
     summary: '删除评论接口',
     description: '传入评论的id 需要登录 删自己的',
   })
@@ -81,5 +74,16 @@ export class CommentController {
     @CurrentUser() user: UsersEntity,
   ): Promise<CommentEntity[]> {
     return this.commentService.getUserCommentList(user);
+  }
+
+  @ApiOperation({ summary: '点赞评论接口' })
+  @ApiBearerAuth()
+  @Post('like/comment')
+  @Auth()
+  public async likeComment(
+    @CurrentUser() user: UsersEntity,
+    @Body() likeCommentDto: LikeCommentDto,
+  ): Promise<'点赞成功' | '取消点赞成功'> {
+    return this.commentService.likeComment(likeCommentDto, user);
   }
 }

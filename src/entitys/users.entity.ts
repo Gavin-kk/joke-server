@@ -21,6 +21,7 @@ import { FeedbackEntity } from './feedback.entity';
 import { RolesEntity } from './roles.entity';
 import { VisitorEntity } from './visitor.entity';
 import { ReplyEntity } from './reply.entity';
+import { UserCommentLikeEntity } from './user-comment-like.entity';
 
 @Index('IDX_fe0bb3f6520ee0469504521e71', ['username'], { unique: true })
 @Index('IDX_97672ac88f789774dd47f7c8be', ['email'], { unique: true })
@@ -82,6 +83,14 @@ export class UsersEntity {
     length: 50,
   })
   nickname: string | null;
+
+  @Column('varchar', {
+    name: 'bg-url',
+    nullable: true,
+    comment: '用户主页的北京图片',
+    length: 100,
+  })
+  bgUrl: string | null;
 
   @Exclude()
   @Column('varchar', {
@@ -148,4 +157,10 @@ export class UsersEntity {
 
   @OneToMany(() => ReplyEntity, (reply) => reply.user)
   replies: ReplyEntity[];
+
+  @OneToMany(
+    () => UserCommentLikeEntity,
+    (userCommentLike) => userCommentLike.user,
+  )
+  userCommentLikes: UserCommentLikeEntity[];
 }

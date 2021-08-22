@@ -20,8 +20,6 @@ import { ArticleEntity } from '@src/entitys/article.entity';
 import { compareSync } from 'bcryptjs';
 import { promisify } from 'util';
 import { unlink } from 'fs';
-import { WebSocketServer } from '@nestjs/websockets';
-import { Server } from 'ws';
 
 @Injectable()
 export class UserService {
@@ -314,5 +312,10 @@ export class UserService {
       visitorUserId,
       time: currentTime,
     });
+  }
+
+  //   更改用户背景
+  public async changeUserBg(userId: number, url: string): Promise<void> {
+    await this.usersRepository.update({ id: userId }, { bgUrl: url });
   }
 }

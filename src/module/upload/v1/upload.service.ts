@@ -79,30 +79,35 @@ export class UploadService {
     // 不支持的文件
     const fileNotSupported: string[] = [];
     // 已经上传的文件路径
-    const uploadFilePath: string[] = [];
+    const uploadFilePath: { path: string; name: string }[] = [];
     for (const file of files) {
       if (!file.mimetype.includes('video')) {
         fileNotSupported.push(file.filename);
       } else {
-        uploadFilePath.push(file.filepath);
+        uploadFilePath.push({ path: file.filepath, name: file.filename });
       }
     }
-    for (const filePath of uploadFilePath) {
+    for (const fileObj of uploadFilePath) {
       const coverName = `${uuid()}.png`;
       const videoName = `${uuid()}.mp4`;
       const videoNewPath = path.join(this.uploadVideoPath, videoName);
       const coverDir = this.uploadImagePath;
-      const videoUrl: string = await this.processingVideoTranscoding(
-        filePath,
-        videoName,
-        videoNewPath,
-      );
-      const coverUrl: string = await this.processingVideoCover(
-        videoNewPath,
-        coverName,
-        coverDir,
-      );
-      success.push({ videoUrl, coverUrl });
+      try {
+        const videoUrl: string = await this.processingVideoTranscoding(
+          fileObj.path,
+          videoName,
+          videoNewPath,
+        );
+        const coverUrl: string = await this.processingVideoCover(
+          videoNewPath,
+          coverName,
+          coverDir,
+        );
+        success.push({ videoUrl, coverUrl });
+      } catch (err) {
+        fileNotSupported.push(fileObj.name);
+        this.logger.error(err, '视频或视频封面处理失败');
+      }
     }
     return { success, fileNotSupported };
   }
@@ -113,7 +118,7 @@ export class UploadService {
     videoName: string,
     outputDir: string,
   ): Promise<string> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const fg = new Ffmpeg();
@@ -122,6 +127,9 @@ export class UploadService {
           resolve(
             `http://${process.env.APP_HOST}:${process.env.APP_PORT}/static/video/${videoName}`,
           );
+        })
+        .on('error', (err) => {
+          reject(new Error(err));
         })
         .outputFormat('mp4')
         .output(outputDir)
@@ -134,7 +142,7 @@ export class UploadService {
     coverName: string,
     outputDir: string,
   ): Promise<string> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const fg = new Ffmpeg();
@@ -143,6 +151,9 @@ export class UploadService {
           resolve(
             `http://${process.env.APP_HOST}:${process.env.APP_PORT}/static/image/${coverName}`,
           );
+        })
+        .on('error', (err) => {
+          reject(new Error(err));
         })
         .screenshot({
           timestamps: [1],

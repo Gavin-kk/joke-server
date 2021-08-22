@@ -12,6 +12,7 @@ export class CheckUserAuthGuard implements CanActivate {
       client.send(
         JSON.stringify({ event: 'error', data: { msg: '无效授权' } }),
       );
+      client.close();
       return false;
     }
     return true;
