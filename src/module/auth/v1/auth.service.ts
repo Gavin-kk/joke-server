@@ -11,6 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { OtherLoginDto } from './dto/other-login.dto';
 import { UserBindEntity } from '@src/entitys/user-bind.entity';
 import {
+  REDIS_EDIT_EMAIL_KEY_METHOD,
   REDIS_EMAIL_KEY_METHOD,
   REDIS_LOGIN_KEY_METHOD,
 } from '@src/common/constant/email.constant';
@@ -148,9 +149,16 @@ export class AuthService {
     VCode,
     email,
     userBindId,
+    nickname,
+    avatar,
   }: OtherBindEmailDto): Promise<UsersEntity> {
+    const redisEmailCodeIsExists: number | null = await this.redisService.get(
+      REDIS_EDIT_EMAIL_KEY_METHOD(email),
+    );
     // 验证验证码是否正确
-    await this.checkVCode(email, VCode);
+    if (redisEmailCodeIsExists !== VCode) {
+      throw new NewHttpException('验证码错误');
+    }
     // 首先验证该邮箱或者说用户是否已经存在了
     const emailIsBind: UsersEntity | undefined =
       await this.userRepository.findOne({
@@ -179,7 +187,7 @@ export class AuthService {
         const user: InsertResult = await queryRunner.manager
           .createQueryBuilder(UsersEntity, 'user')
           .insert()
-          .values({ email, password, username: email })
+          .values({ email, password, username: email, nickname, avatar })
           .execute();
         // 创建用户详情
         await queryRunner.manager

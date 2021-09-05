@@ -264,6 +264,10 @@ export class ArticleService {
       .leftJoinAndSelect('users.userinfo', 'userinfo')
       .leftJoinAndSelect('art.comments', 'comment')
       .leftJoinAndSelect('comment.user', 'u')
+      .loadRelationCountAndMap(
+        'comment.commentLikeCount',
+        'comment.userCommentLikes',
+      )
       .loadRelationCountAndMap('comment.replyCount', 'comment.reply')
       .leftJoinAndSelect('art.share', 'share')
       .loadRelationCountAndMap('art.commentCount', 'art.comments')
@@ -295,6 +299,12 @@ export class ArticleService {
           {
             userId,
           },
+        )
+        .loadRelationCountAndMap(
+          'comment.isLike',
+          'comment.userCommentLikes',
+          's',
+          (qb) => qb.where('s.user_id = :userId', { userId }),
         );
     }
     return query.where('art.id = :articleId', { articleId }).getOne();

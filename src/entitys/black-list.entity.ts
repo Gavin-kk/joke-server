@@ -31,15 +31,15 @@ export class BlackListEntity {
   updateAt: Timestamp;
 
   @ManyToOne(() => UsersEntity, (users) => users.blackLists, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
   user: UsersEntity;
 
   @ManyToOne(() => UsersEntity, (users) => users.blackLists2, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'black_user_id', referencedColumnName: 'id' }])
   blackUser: UsersEntity;

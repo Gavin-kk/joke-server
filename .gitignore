@@ -1,4 +1,6 @@
 # compiled output
+/src/key/www.newin.top.key
+/src/key/www.newin.top.pem
 /dist
 /node_modules
 ./entitys

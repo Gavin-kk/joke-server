@@ -20,6 +20,9 @@ import { ArticleEntity } from '@src/entitys/article.entity';
 import { compareSync } from 'bcryptjs';
 import { promisify } from 'util';
 import { unlink } from 'fs';
+import * as path from 'path';
+import { UserExperienceEntity } from '@src/entitys/user.experience.entity';
+import * as Moment from 'moment';
 
 @Injectable()
 export class UserService {
@@ -35,6 +38,8 @@ export class UserService {
     private readonly visitorRepository: Repository<VisitorEntity>,
     @InjectRepository(ArticleEntity)
     private readonly articleRepository: Repository<ArticleEntity>,
+    @InjectRepository(UserExperienceEntity)
+    private readonly userExperienceRepository: Repository<UserExperienceEntity>,
     private readonly redisService: RedisServiceN,
     private readonly connection: Connection,
   ) {}
@@ -90,7 +95,8 @@ export class UserService {
             qb.where('todaySVisitor.time > :today', {
               today: new Date().getTime() - 1000 * 60 * 60 * 24,
             }),
-        );
+        )
+        .leftJoinAndSelect('u.userExperiences', 'userExperiences');
       if (userIdT) {
         query.leftJoinAndSelect(
           'u.followed',
@@ -268,18 +274,20 @@ export class UserService {
         await this.usersRepository.update(
           { id: user.id },
           {
-            nickname: nickname || user.nickname,
+            nickname: nickname || null,
             avatar: avatar || user.avatar,
           },
         );
         // 如果用户要更改头像那么把以前的头像从服务器上删除掉
-        if (avatar) {
+        if (avatar && user.avatar !== avatar) {
           const unFile = promisify(unlink);
-          const fileName: string = avatar.replace(
-            `http://${process.env.APP_HOST}:${process.env.APP_PORT}/static/`,
+          const fileName: string = user.avatar.replace(
+            `https://${process.env.APP_HOST}:${process.env.APP_PORT}/static/image/`,
             '',
           );
-          await unFile(fileName);
+          await unFile(
+            path.join(__dirname, '../../../', 'upload-file/image', fileName),
+          );
         }
       }
 
@@ -312,6 +320,66 @@ export class UserService {
       visitorUserId,
       time: currentTime,
     });
+  }
+
+  // 用户签到
+  public async sigIn(userId: number) {
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    const experience: UserExperienceEntity | undefined =
+      await queryRunner.manager.findOne(UserExperienceEntity, {
+        where: {
+          userId,
+        },
+      });
+
+    try {
+      if (typeof experience === 'undefined') {
+        await queryRunner.manager.save(UserExperienceEntity, {
+          userId,
+          experience: 3,
+        });
+        await queryRunner.commitTransaction();
+      } else {
+        const todayIsExists = await queryRunner.manager
+          .createQueryBuilder(UserExperienceEntity, 'ue')
+          .where(
+            `to_days(ue.updateAt) = to_days("${Moment().format(
+              'YYYY-MM-DD',
+            )}")`,
+          )
+          .andWhere('ue.user_id = :userId', { userId })
+          .getOne();
+
+        if (typeof todayIsExists !== 'undefined') {
+          throw new Error('今天已经签到过了呦~');
+        }
+        const obj = {
+          experience: experience.experience + 3,
+          grade: experience.grade,
+        };
+        const grade = +(experience.experience / 5).toFixed(0);
+        if (grade !== experience.grade) {
+          obj.grade = grade;
+        }
+        await queryRunner.manager.update(
+          UserExperienceEntity,
+          { userId },
+          { experience: experience.experience + 3 },
+        );
+        await queryRunner.commitTransaction();
+      }
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      if (err.message === '今天已经签到过了呦~') {
+        throw new NewHttpException(err.message);
+      }
+      this.logger.error(err, '签到出错');
+      throw new NewHttpException('签到出错');
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   //   更改用户背景

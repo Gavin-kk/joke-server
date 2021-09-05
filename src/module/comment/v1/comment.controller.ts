@@ -19,6 +19,7 @@ import { checkId } from '@src/module/comment/v1/dto/comment.schema';
 import { CommentEntity } from '@src/entitys/comment.entity';
 import { GetArticleCommentListDto } from '@src/module/comment/v1/dto/get-article-comment-list.dto';
 import { LikeCommentDto } from '@src/module/comment/v1/dto/like-comment.dto';
+import { CurrentUserId } from '@src/common/decorator/current-userId.decorator';
 
 @ApiTags('文章评论模块')
 @Controller('api/v1/comment')
@@ -47,8 +48,9 @@ export class CommentController {
   @Get('list')
   public async getArticleCommentList(
     @Query() { commentId }: GetArticleCommentListDto,
+    @CurrentUserId() userId: number,
   ) {
-    return this.commentService.getArticleCommentList(+commentId);
+    return this.commentService.getArticleCommentList(+commentId, userId);
   }
 
   @ApiOperation({

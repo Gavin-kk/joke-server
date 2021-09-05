@@ -12,6 +12,7 @@ import { CheckLoginWeakenedMiddleware } from '@src/common/middleware/check-login
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { ChatGateway } from '@src/module/chat/chat.gateway';
 import { ChatModule } from '@src/module/chat/chat.module';
+import { UserExperienceEntity } from '@src/entitys/user.experience.entity';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ChatModule } from '@src/module/chat/chat.module';
       BlackListEntity,
       VisitorEntity,
       ArticleEntity,
+      UserExperienceEntity,
     ]),
     RedisModule,
     JwtModule.register({ secret: process.env.JWT_SECRET }),

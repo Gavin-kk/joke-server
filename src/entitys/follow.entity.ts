@@ -31,15 +31,15 @@ export class FollowEntity {
   updateAt: Timestamp;
 
   @ManyToOne(() => UsersEntity, (users) => users.follows, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
   user: UsersEntity;
 
   @ManyToOne(() => UsersEntity, (users) => users.followed, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'follow_id', referencedColumnName: 'id' }])
   follow: UsersEntity;

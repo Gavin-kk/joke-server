@@ -4,24 +4,20 @@ import {
   MessageBody,
   WebSocketServer,
   ConnectedSocket,
-  OnGatewayConnection,
-  WsException,
 } from '@nestjs/websockets';
 import { ChatService } from './chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
-import { UpdateChatDto } from './dto/update-chat.dto';
-import WebSocket, { Server } from 'ws';
-import { Injectable, Logger, UseFilters, UseGuards } from '@nestjs/common';
-import { AuthDto } from '@src/module/chat/dto/auth.dto';
+import { Server } from 'ws';
+import { UseFilters, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@src/module/chat/guard/auth.guard';
-import { IChatMsg, IWs, IWsResponse } from '@src/module/chat/ws.interface';
+import { IChatMsg, IWs } from '@src/module/chat/ws.interface';
 import { CheckUserAuthGuard } from '@src/module/chat/guard/check-user-auth.guard';
 import { WebsocketException } from '@src/common/exception/websocket.exception';
 import { ChatEntity } from '@src/entitys/chat.entity';
 import { AttentionCountEntity } from '@src/entitys/attention-count.entity';
 import { LikeCountEntity } from '@src/entitys/like-count.entity';
 
-@WebSocketGateway(5001)
+@WebSocketGateway()
 @UseFilters(WebsocketException)
 export class ChatGateway {
   @WebSocketServer()
@@ -92,6 +88,9 @@ export class ChatGateway {
     await this.chatService.checkWhetherToPayAttentionToEachOther(
       targetUserId,
       currentClient.user.id,
+      time,
+      content,
+      currentClient,
     );
 
     const data: IChatMsg = {

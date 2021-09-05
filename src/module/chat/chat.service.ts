@@ -6,7 +6,7 @@ import { UsersEntity } from '@src/entitys/users.entity';
 import { Repository } from 'typeorm';
 import { WsException } from '@nestjs/websockets';
 import { ChatEntity } from '@src/entitys/chat.entity';
-import { IChatMsg } from '@src/module/chat/ws.interface';
+import { IChatMsg, IWs } from '@src/module/chat/ws.interface';
 import { FollowService } from '@src/module/follow/v1/follow.service';
 import { AttentionCountEntity } from '@src/entitys/attention-count.entity';
 import { LikeCountEntity } from '@src/entitys/like-count.entity';
@@ -38,6 +38,9 @@ export class ChatService {
   public async checkWhetherToPayAttentionToEachOther(
     targetUserId: number,
     currentUsreId: number,
+    time: number,
+    content: string,
+    currentClient: IWs,
   ) {
     const isFollowEachOther = await this.followService.getMutualList(
       currentUsreId,
@@ -46,7 +49,16 @@ export class ChatService {
       (item) => item.id === targetUserId,
     );
     if (findIndex === -1) {
-      throw new WsException('没有互相关注呦，需要互相关注才能发送消息呦');
+      currentClient.send(
+        JSON.stringify({
+          event: 'noMutualRelations',
+          data: {
+            msg: `没有互相关注呦，需要互相关注才能发送消息呦-`,
+            id: `${time}$${content}`,
+            targetUserId,
+          },
+        }),
+      );
     }
   }
 

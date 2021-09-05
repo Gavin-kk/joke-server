@@ -126,6 +126,18 @@ export class TopicService {
     if (isEmpty(content)) throw new NewHttpException('参数错误');
     return this.topicRepository
       .createQueryBuilder('t')
+      .loadRelationCountAndMap('t.articleCount', 't.articles')
+      .loadRelationCountAndMap(
+        't.todayCount',
+        't.articles',
+        'todayCount',
+        (qb) =>
+          qb.where(
+            `to_days(todayCount.createAt) = to_days("${Moment().format(
+              'YYYY-MM-DD',
+            )}")`,
+          ),
+      )
       .where('t.title like :name', { name: `%${content}%` })
       .offset(0)
       .limit(pageNum * 10)

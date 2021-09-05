@@ -52,8 +52,8 @@ export class UserBindEntity {
   userId: number | null;
 
   @ManyToOne(() => UsersEntity, (users) => users.userBinds, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
   user: UsersEntity;

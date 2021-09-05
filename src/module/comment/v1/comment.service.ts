@@ -100,15 +100,23 @@ export class CommentService {
     }
   }
 
-  public async getArticleCommentList(commentId: number) {
-    return this.commentRepository
+  public async getArticleCommentList(commentId: number, userId?: number) {
+    const query = this.commentRepository
       .createQueryBuilder('c')
       .leftJoinAndSelect('c.reply', 'reply')
+      .loadRelationCountAndMap('c.commentLikeCount', 'reply.userCommentLikes')
       .leftJoinAndSelect('reply.target', 'target')
       .leftJoinAndSelect('reply.user', 'lll')
-      .leftJoinAndSelect('target.user', 'u')
-      .where('c.id = :commentId', { commentId })
-      .getOne();
+      .leftJoinAndSelect('target.user', 'u');
+    if (typeof userId !== 'undefined' && !isNaN(userId)) {
+      query.loadRelationCountAndMap(
+        'reply.isLike',
+        'reply.userCommentLikes',
+        's',
+        (qb) => qb.where('s.user_id = :userId', { userId }),
+      );
+    }
+    return query.where('c.id = :commentId', { commentId }).getOne();
   }
 
   public async likeComment(
@@ -123,7 +131,7 @@ export class CommentService {
             id: commentId,
           });
         if (typeof isExistsComment === 'undefined') {
-          throw new NewHttpException('评论不存在');
+          throw new Error('评论不存在');
         }
         // 查询是否已经点赞了
         const isExists: UserCommentLikeEntity | undefined =
@@ -151,7 +159,7 @@ export class CommentService {
             id: commentId,
           });
         if (typeof isExistsComment === 'undefined') {
-          throw new NewHttpException('评论不存在');
+          throw new Error('评论不存在');
         }
         // 查询是否已经点赞了
         const isExists: UserCommentLikeEntity | undefined =
@@ -175,7 +183,7 @@ export class CommentService {
       }
     } catch (err) {
       this.logger.error(err, '评论点赞错误');
-      throw new NewHttpException('点赞错误');
+      throw new NewHttpException(err.message);
     }
   }
 }

@@ -42,15 +42,15 @@ export class UserArticleLikeEntity {
   updateAt: Date | null;
 
   @ManyToOne(() => UsersEntity, (users) => users.userArticlesLikes, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
   user: UsersEntity;
 
   @ManyToOne(() => ArticleEntity, (article) => article.userArticlesLikes, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'article_id', referencedColumnName: 'id' }])
   article: ArticleEntity;

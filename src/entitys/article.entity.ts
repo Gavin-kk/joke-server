@@ -145,8 +145,8 @@ export class ArticleEntity {
   updateAt: Timestamp;
 
   @ManyToOne(() => UsersEntity, (users) => users.articles, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
   user: UsersEntity;
@@ -155,16 +155,16 @@ export class ArticleEntity {
     () => ArticleClassifyEntity,
     (articleClassify) => articleClassify.articles,
     {
-      onDelete: 'NO ACTION',
-      onUpdate: 'NO ACTION',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
   )
   @JoinColumn([{ name: 'article-classify_id', referencedColumnName: 'id' }])
   articleClassify: ArticleClassifyEntity;
 
   @ManyToOne(() => ArticleEntity, (article) => article.articles, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'share_id', referencedColumnName: 'id' }])
   share: ArticleEntity;

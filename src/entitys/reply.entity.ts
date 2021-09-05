@@ -48,22 +48,22 @@ export class ReplyEntity {
   updateAt: Timestamp;
 
   @ManyToOne(() => UsersEntity, (users) => users.replies, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
   user: UsersEntity;
 
   @ManyToOne(() => CommentEntity, (comment) => comment.reply, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'comment_id', referencedColumnName: 'id' }])
   comment: CommentEntity;
 
   @ManyToOne(() => ReplyEntity, (reply) => reply.replies, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'target_id', referencedColumnName: 'id' }])
   target: ReplyEntity;

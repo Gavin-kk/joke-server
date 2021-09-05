@@ -10,7 +10,9 @@ export class EmailController {
 
   @ApiOperation({ summary: '发送邮件' })
   @Get('code')
-  public async sendEmail(@Query() { email, type }: SendEmailDto): Promise<void> {
+  public async sendEmail(
+    @Query() { email, type }: SendEmailDto,
+  ): Promise<void> {
     await this.emailService.sendEmailCode(email, +type);
   }
 }

@@ -50,8 +50,8 @@ export class TopicEntity {
     () => TopicClassifyEntity,
     (TopicClassifyEntity) => TopicClassifyEntity.topics,
     {
-      onDelete: 'NO ACTION',
-      onUpdate: 'NO ACTION',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
   )
   @JoinColumn([{ name: 'topic-classify_id', referencedColumnName: 'id' }])

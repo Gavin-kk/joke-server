@@ -46,22 +46,22 @@ export class UserCommentLikeEntity {
   updateAt: Date | null;
 
   @ManyToOne(() => UsersEntity, (users) => users.userCommentLikes, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'user_id', referencedColumnName: 'id' }])
   user: UsersEntity;
 
   @ManyToOne(() => CommentEntity, (comment) => comment.userCommentLikes, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'comment_id', referencedColumnName: 'id' }])
   comment: CommentEntity;
 
   @ManyToOne(() => ReplyEntity, (reply) => reply.userCommentLikes, {
-    onDelete: 'NO ACTION',
-    onUpdate: 'NO ACTION',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
   })
   @JoinColumn([{ name: 'reply_id', referencedColumnName: 'id' }])
   reply: ReplyEntity;

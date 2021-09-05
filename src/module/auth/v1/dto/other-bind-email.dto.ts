@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsNumber } from 'class-validator';
+import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class OtherBindEmailDto {
@@ -17,4 +17,12 @@ export class OtherBindEmailDto {
   @ApiProperty({ description: '要绑定的邮箱验证码' })
   @IsNumber({}, { message: '验证码类型错误' })
   VCode: number;
+
+  @ApiProperty({ description: '用户昵称' })
+  @IsString({ message: '昵称类型错误' })
+  nickname: string;
+
+  @ApiProperty({ description: '用户头像' })
+  @IsString({ message: '头像参数类型错误' })
+  avatar: string;
 }

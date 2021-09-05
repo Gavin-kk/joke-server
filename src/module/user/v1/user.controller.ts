@@ -21,7 +21,6 @@ import { CurrentUserId } from '@src/common/decorator/current-userId.decorator';
 import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
 import * as joi from 'joi';
 import { ChatGateway } from '@src/module/chat/chat.gateway';
-const schema = joi.number().required();
 
 @ApiTags('用户模块')
 @Controller('api/v1/user')
@@ -34,7 +33,6 @@ export class UserController {
   @ApiOperation({ summary: '获取用户详情 携带访客信息' })
   @ApiBearerAuth()
   @Get('info')
-  // @Auth()
   public async getUserDetails(
     @Query('id') targetUserId: number,
     @CurrentUserId() userId: number,
@@ -131,5 +129,13 @@ export class UserController {
     @Body('imageUrl') imageUrl: string,
   ): Promise<void> {
     return this.userService.changeUserBg(userId, imageUrl);
+  }
+  // TODO
+  @ApiOperation({ summary: '用户签到' })
+  @ApiBearerAuth()
+  @Post('signIn')
+  @Auth()
+  public async signIn(@CurrentUser('id') userId: number): Promise<void> {
+    return this.userService.sigIn(userId);
   }
 }

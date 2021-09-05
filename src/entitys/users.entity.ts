@@ -22,6 +22,7 @@ import { RolesEntity } from './roles.entity';
 import { VisitorEntity } from './visitor.entity';
 import { ReplyEntity } from './reply.entity';
 import { UserCommentLikeEntity } from './user-comment-like.entity';
+import { UserExperienceEntity } from './user.experience.entity';
 
 @Index('IDX_fe0bb3f6520ee0469504521e71', ['username'], { unique: true })
 @Index('IDX_97672ac88f789774dd47f7c8be', ['email'], { unique: true })
@@ -163,4 +164,10 @@ export class UsersEntity {
     (userCommentLike) => userCommentLike.user,
   )
   userCommentLikes: UserCommentLikeEntity[];
+
+  @OneToMany(
+    () => UserExperienceEntity,
+    (userExperience) => userExperience.user,
+  )
+  userExperiences: UserExperienceEntity[];
 }

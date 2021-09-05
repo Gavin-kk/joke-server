@@ -143,7 +143,9 @@ export class AuthController {
       '第三方账号第一次登录时绑定邮箱 请求本接口需要先请求邮箱验证码 type 为 login',
   })
   @Post('other/bind/email')
-  async bindEmail(@Body() bindEmailDto: OtherBindEmailDto) {
+  public async bindEmail(
+    @Body() bindEmailDto: OtherBindEmailDto,
+  ): Promise<{ user: UsersEntity; token: string }> {
     const user: UsersEntity = await this.authService.otherLoginBindEmail(
       bindEmailDto,
     );
