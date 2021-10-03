@@ -1,13 +1,6 @@
 import { Body, Controller, Get, Post, Put, Query } from '@nestjs/common';
 import { UserService } from './user.service';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiProperty,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UsersEntity } from '@src/entitys/users.entity';
 import { Auth } from '@src/common/decorator/auth.decorator';
 import { CurrentUser } from '@src/common/decorator/current-user.decorator';
@@ -18,8 +11,6 @@ import { EditUserinfoDto } from '@src/module/user/v1/dto/edit-userinfo.dto';
 import { BlockUserDto } from '@src/module/user/v1/dto/block-user.dto';
 import { AddVisitorDto } from '@src/module/user/v1/dto/add-visitor.dto';
 import { CurrentUserId } from '@src/common/decorator/current-userId.decorator';
-import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
-import * as joi from 'joi';
 import { ChatGateway } from '@src/module/chat/chat.gateway';
 
 @ApiTags('用户模块')
@@ -43,12 +34,11 @@ export class UserController {
   @ApiOperation({ summary: '添加访客' })
   @ApiBearerAuth()
   @Post('visitor')
-  @Auth()
   public async addGuest(
-    @CurrentUser('id') userId: number,
+    @CurrentUserId() userId: number,
     @Body() { visitorUserId }: AddVisitorDto,
   ): Promise<void> {
-    await this.userService.addVisitor(userId, visitorUserId);
+    await this.userService.addVisitor(visitorUserId, userId);
   }
 
   @ApiOperation({ summary: '拉黑用户或解除拉黑 需要登录 传入被拉黑人的id' })

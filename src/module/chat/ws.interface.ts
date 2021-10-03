@@ -1,6 +1,5 @@
 import WebSocket from 'ws';
 import { UsersEntity } from '@src/entitys/users.entity';
-import { Column, PrimaryGeneratedColumn } from 'typeorm';
 
 export interface IWs extends WebSocket {
   user: UsersEntity;

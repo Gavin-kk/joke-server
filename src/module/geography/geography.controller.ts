@@ -12,6 +12,9 @@ import { Observable } from 'rxjs';
 import { AxiosResponse } from 'axios';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
+import { GeographicEntity } from '@src/entitys/geographic.entity';
+import { LineCheckTransformPipe } from '@src/common/pipe/line-check-transform.pipe';
+import { checkId } from '@src/module/comment/v1/dto/comment.schema';
 
 @ApiTags('地理模块')
 @Controller('api/v1/geography')
@@ -35,9 +38,9 @@ export class GeographyController {
         'https://restapi.amap.com/v3/geocode/regeo',
         {
           params: {
-            key: process.env.GAO_DE_KEY,
             location,
             extensions: 'all',
+            key: process.env.GAO_DE_KEY,
           },
         },
       );
@@ -47,5 +50,13 @@ export class GeographyController {
     } catch (err) {
       this.logger.error(err.response.data, '获取逆地理信息出错');
     }
+  }
+
+  @ApiOperation({ summary: '省市区级联' })
+  @Get('city')
+  public city(
+    @Query('id', new LineCheckTransformPipe(checkId)) id: number,
+  ): Promise<GeographicEntity[]> {
+    return this.geographyService.findAll(id);
   }
 }

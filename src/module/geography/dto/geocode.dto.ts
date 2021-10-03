@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsNumberString } from 'class-validator';
+import * as joi from 'joi';
 
 export class GeocodeDto {
   @ApiProperty({ description: '纬度' })

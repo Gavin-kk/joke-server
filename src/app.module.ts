@@ -16,6 +16,7 @@ import { FeedbackModule } from './module/feedback/v1/feedback.module';
 import { UpdateModule } from './module/update/v1/update.module';
 import { ChatModule } from './module/chat/chat.module';
 import { GeographyModule } from './module/geography/geography.module';
+import { CarouselModule } from './module/carousel/carousel.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { GeographyModule } from './module/geography/geography.module';
     UpdateModule,
     ChatModule,
     GeographyModule,
+    CarouselModule,
   ],
   controllers: [],
   providers: [],

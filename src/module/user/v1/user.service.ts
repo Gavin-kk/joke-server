@@ -212,7 +212,7 @@ export class UserService {
   public async editEmail(
     { VCode, newEmail, password }: EditEmailDto,
     user: UsersEntity,
-  ) {
+  ): Promise<void> {
     // 查询用户密码是否正确
     if (!compareSync(password, user.password)) {
       throw new NewHttpException('密码错误');
@@ -311,9 +311,10 @@ export class UserService {
   }
   //添加访客记录
   public async addVisitor(
-    userId: number,
     visitorUserId: number,
+    userId?: number,
   ): Promise<void> {
+    if (!userId) return;
     const currentTime: number = new Date().getTime();
     await this.visitorRepository.save({
       userId,

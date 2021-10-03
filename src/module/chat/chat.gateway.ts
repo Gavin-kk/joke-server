@@ -102,7 +102,7 @@ export class ChatGateway {
     };
 
     // 用户是否在线 如果不在线就把聊天消息存储到数据库中
-    const isOnline: boolean = this.send(targetUserId, {
+    const isOnline: boolean = this.send<IChatMsg>(targetUserId, {
       event: 'chatMessage',
       data,
     });
@@ -127,7 +127,7 @@ export class ChatGateway {
 
   //  给指定用户发送关注通知 有人关注此人通知此人有人关注了他
   public async sendFollowMsg(targetUserId: number) {
-    const isOnline: boolean = this.send(targetUserId, {
+    const isOnline: boolean = this.send<number>(targetUserId, {
       event: 'offlineFollowCount',
       data: 1,
     });
@@ -150,9 +150,9 @@ export class ChatGateway {
   }
 
   // 返回是否在线
-  public send(
+  public send<T = any>(
     targetUserId: number,
-    data: { event: string; data: any },
+    data: { event: string; data: T },
   ): boolean {
     let isOnline = false;
     try {
